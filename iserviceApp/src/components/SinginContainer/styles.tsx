@@ -42,7 +42,7 @@ export const styles = StyleSheet.create({
     borderRadius: 40,
     width: "100%",
     height: 50,
-    marginTop:25,
+    marginTop: 48,
     marginBottom: 20
   },
   textButtom: {
