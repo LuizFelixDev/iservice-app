@@ -16,8 +16,5 @@ export const styles = StyleSheet.create({
     button: {
       marginTop: 10
     },
-    buttonText: {
-      color: colors.secondary,
-      fontWeight: 'bold'
-    }
+
   });

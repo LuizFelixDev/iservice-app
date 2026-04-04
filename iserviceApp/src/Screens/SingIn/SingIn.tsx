@@ -1,20 +1,14 @@
 import React from 'react';
-import { View} from 'react-native';
-import {styles} from "../SingIn/singStyles"
-import SinginContainer from "../../components/SinginContainer/SiginContainer"
-
+import { View, Image } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { styles } from "../Login/loginStyles";
+import SiginContainer from "../../components/SinginContainer/SiginContainer";
 
 export default function SingIn({ navigation }: any) {
   return (
     <View style={styles.container}>
-      <SinginContainer/>
+      <SiginContainer navigation={navigation} />
+      <StatusBar style="auto" />
     </View>
   );
 }
-
-      {/* <TouchableOpacity 
-        style={styles.button} 
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.buttonText}>Voltar para Login</Text>
-      </TouchableOpacity> */}

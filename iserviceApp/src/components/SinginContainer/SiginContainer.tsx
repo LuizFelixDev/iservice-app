@@ -1,12 +1,16 @@
-import { StatusBar } from 'expo-status-bar';
 import { Text, View, TextInput, TouchableOpacity } from 'react-native';
 import { styles } from "./styles";
-import { colors } from '../../Colors/Colors';
-import ButtonsContainer from "../LoginContainer/ButtonsContainer/ButtonsContainer";
+import React from 'react';
 
-export default function LoginContainer({ navigation }: any) {
+export default function SiginContainer({ navigation }: any) {
   return (
     <View style={styles.container}>
+      <TouchableOpacity 
+        style={{alignSelf: 'flex-start', marginStart: 30, paddingTop:20}} 
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.buttonText}>⬅ Voltar para Login</Text>
+      </TouchableOpacity> 
       <Text style={styles.title}>Nova Conta</Text>
       <TextInput 
         style={styles.inputStyle} 
