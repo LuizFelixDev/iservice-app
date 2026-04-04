@@ -3,13 +3,14 @@ import { colors } from "../../Colors/Colors";
 
 export const styles = StyleSheet.create({
   container: {
-    height: "70%",
+    height: "73%",
     width: "100%",
     flexDirection: "column",
     justifyContent: "flex-start",
     alignItems: "center",
     backgroundColor: colors.white,
-    borderRadius: 40
+    borderRadius: 40,
+    bottom: -30,
   },
   title:{
     fontSize: 30,

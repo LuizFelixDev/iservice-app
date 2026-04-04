@@ -16,5 +16,10 @@ export const styles = StyleSheet.create({
     button: {
       marginTop: 10
     },
+    nome:{
+      width:300,
+      height:100,
+      marginTop: 50
+    }
 
   });
