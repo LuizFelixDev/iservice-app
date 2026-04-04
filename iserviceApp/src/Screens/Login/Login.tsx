@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, Image } from 'react-native';
 import { styles } from "./loginStyles";
 import LoginContainer from "../../components/LoginContainer/LoginContainer";
-import logo from "../../../assets/logo.png";
+import logo from "../../../assets/iservice-icon-white.png";
 
 export default function Login({ navigation }: any) {
   return (

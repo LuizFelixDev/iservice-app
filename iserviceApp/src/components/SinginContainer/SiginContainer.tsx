@@ -31,7 +31,7 @@ export default function SiginContainer({ navigation }: any) {
       />
       <TextInput 
         style={styles.inputStyle} 
-        placeholder='Email' 
+        placeholder='Telefone' 
         placeholderTextColor={"#9C9C9D"}
       />
       

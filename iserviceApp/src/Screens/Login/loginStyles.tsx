@@ -13,6 +13,6 @@ export const styles = StyleSheet.create({
     width:150,
     height:150,
     borderRadius:40,
-    marginBottom: 30
+    marginBottom: 25
   }
 });
