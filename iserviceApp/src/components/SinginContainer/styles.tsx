@@ -3,7 +3,7 @@ import { colors } from "../../Colors/Colors";
 
 export const styles = StyleSheet.create({
   container: {
-    height: "70%",
+    height: "80%",
     width: "100%",
     flexDirection: "column",
     justifyContent: "flex-start",
@@ -17,7 +17,7 @@ export const styles = StyleSheet.create({
     color: colors.primary,
     alignSelf: "flex-start",
     marginStart: 50,
-    marginTop: 35,
+    marginTop: 20,
     marginBottom: 13
   },
   inputStyle:{
@@ -42,7 +42,7 @@ export const styles = StyleSheet.create({
     borderRadius: 40,
     width: "100%",
     height: 50,
-    marginTop:25,
+    marginTop: 48,
     marginBottom: 20
   },
   textButtom: {
@@ -56,5 +56,9 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: "100%"
+  },
+  buttonText: {
+    color: colors.secondary,
+    fontWeight: 'bold'
   }
 });
