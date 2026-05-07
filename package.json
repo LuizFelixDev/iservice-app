@@ -30,10 +30,11 @@
     "@types/jest": "^30.0.0",
     "@types/react": "~19.1.10",
     "babel-jest": "^30.3.0",
+    "babel-preset-expo": "^55.0.21",
     "eslint": "^8.57.1",
     "jest": "^30.3.0",
     "metro-react-native-babel-preset": "^0.77.0",
-    "react-test-renderer": "^19.2.5",
+    "react-test-renderer": "^19.1.0",
     "typescript": "~5.9.2"
   },
   "private": true
