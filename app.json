@@ -2,6 +2,7 @@
   "expo": {
     "name": "iserviceApp",
     "slug": "iserviceApp",
+    "scheme": "iservice",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,6 +16,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "br.com.iserviceapp",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,6 +27,21 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-dev-client",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.SEU_IOS_CLIENT_ID_MOCK"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3ca7d686-19a0-428e-8afd-0c585f80601f"
+      }
     }
   }
 }
