@@ -6,7 +6,7 @@ import { colors } from '@/colors/Colors';
 
 import HomeClient from '../screens/client/HomeClient';
 import RadarScreen from '../screens/professional/RadarScreen';
-import SelectServiceByProfi from '../screens/professional/selectServiceByProfi'; 
+import SelectServiceByProfi from '../screens/professional/SelectServiceByProfi'; 
 import ProfileRoutes from './profile.routes';
 
 const AppTab = createBottomTabNavigator();
