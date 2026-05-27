@@ -6,6 +6,7 @@ import { colors } from '@/colors/Colors';
 
 import HomeClient from '../screens/client/HomeClient';
 import RadarScreen from '../screens/professional/RadarScreen';
+import SelectServiceByProfi from '../screens/professional/SelectServiceByProfi'; 
 import ProfileRoutes from './profile.routes';
 
 const AppTab = createBottomTabNavigator();
@@ -20,6 +21,7 @@ export default function AppRoutes() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.onSurfaceVariant,
         tabBarStyle: {
+          marginBottom: 40,
           paddingBottom: 5,
           height: 60,
           backgroundColor: colors.surface,
@@ -30,6 +32,8 @@ export default function AppRoutes() {
 
           if (route.name === 'Início' || route.name === 'Radar') {
             iconName = focused ? 'map' : 'map-outline';
+          } else if (route.name === 'Serviços') {
+            iconName = focused ? 'briefcase' : 'briefcase-outline';
           } else if (route.name === 'Perfil') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -51,6 +55,13 @@ export default function AppRoutes() {
           options={{ title: 'Solicitar' }}
         />
       )}
+      
+      {/* 2. NOVA TELA FORA DA CONDICIONAL (Apenas para teste) */}
+      <AppTab.Screen 
+        name="Serviços" 
+        component={SelectServiceByProfi} 
+        options={{ title: 'Serviços' }}
+      />
       
       <AppTab.Screen 
         name="Perfil" 
