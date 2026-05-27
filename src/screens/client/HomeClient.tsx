@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
 import { colors } from '@/colors/Colors';
 import { styles } from './HomeClientStyle';
 
@@ -44,12 +45,12 @@ function Header({ userName, onBellPress }: { userName: string; onBellPress: () =
     <View style={styles.header}>
       <View style={styles.headerLeft}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>👤</Text>
+          <Ionicons name="person" size={20} color={colors.onSurfaceVariant} />
         </View>
         <Text style={styles.greeting}>Olá, {userName}</Text>
       </View>
       <TouchableOpacity style={styles.bellBtn} onPress={onBellPress} activeOpacity={0.7}>
-        <Text style={styles.bellIcon}>🔔</Text>
+        <Ionicons name="notifications-outline" size={22} color={colors.onSurface} />
       </TouchableOpacity>
     </View>
   );
@@ -83,7 +84,7 @@ function ServiceRequestCard({
       />
 
       <View style={styles.locationRow}>
-        <Text style={styles.locationIcon}>📍</Text>
+        <Ionicons name="location-sharp" size={16} color={colors.primary} />
         <Text style={styles.locationText}>Localização capturada com sucesso</Text>
       </View>
 
@@ -94,7 +95,7 @@ function ServiceRequestCard({
         disabled={isDisabled}
       >
         <Text style={styles.ctaBtnText}>Solicitar Profissional Próximo</Text>
-        <Text style={styles.ctaArrow}>→</Text>
+        <Feather name="arrow-right" size={18} color={colors.white} />
       </TouchableOpacity>
     </View>
   );
@@ -115,7 +116,7 @@ function ChamadoCard({
         <View style={[styles.statusDot, { backgroundColor: color }]} />
         <Text style={[styles.statusText, { color }]}>{label}</Text>
         <TouchableOpacity style={styles.editBtn} activeOpacity={0.7}>
-          <Text style={styles.editIcon}>✏️</Text>
+          <Feather name="edit-2" size={16} color={colors.onSurfaceVariant} />
         </TouchableOpacity>
       </View>
 
@@ -127,7 +128,7 @@ function ChamadoCard({
         </View>
         <Text style={styles.profNome}>{chamado.profissional.nome}</Text>
         <TouchableOpacity style={styles.chatBtn} activeOpacity={0.7}>
-          <Text style={styles.chatIcon}>💬</Text>
+          <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -180,7 +181,7 @@ export default function HomeClient() {
 
         {MOCK_CHAMADOS.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📋</Text>
+            <MaterialIcons name="assignment" size={40} color={colors.onSurfaceVariant} />
             <Text style={styles.emptyText}>Nenhum chamado ativo</Text>
           </View>
         ) : (
