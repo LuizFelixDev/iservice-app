@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import * as Location from 'expo-location';
@@ -45,7 +45,7 @@ export default function UpdateProfileScreen() {
         lng: location.coords.longitude,
       });
       Alert.alert('Sucesso', 'Localização capturada com sucesso!');
-    } catch (error) {
+    } catch {
       Alert.alert('Erro', 'Não foi possível capturar a localização.');
     } finally {
       setGettingLocation(false);
@@ -68,13 +68,12 @@ export default function UpdateProfileScreen() {
 
       const updatedUser = await usersService.updateProfile(payload);
       
-      // Update global context so the user instantly gets the Professional role if applicable
       updateUser(updatedUser);
       
       Alert.alert('Sucesso', 'Seu perfil foi atualizado e agora você é um Profissional!', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
-    } catch (error) {
+    } catch {
       Alert.alert('Erro', 'Falha ao atualizar o perfil. Tente novamente.');
     } finally {
       setLoading(false);

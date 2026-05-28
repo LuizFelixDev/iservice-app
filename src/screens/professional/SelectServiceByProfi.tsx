@@ -100,7 +100,7 @@ const CategoryPill = ({
       name={item.icon as any}
       size={15}
       color={selected ? colors.white : colors.onSurfaceVariant}
-      style={{ marginRight: 5 }}
+      style={styles.pillIcon}
     />
     <Text style={[styles.pillLabel, selected && styles.pillLabelSelected]}>
       {item.label}
