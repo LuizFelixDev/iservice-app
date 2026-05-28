@@ -1,7 +1,16 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
 
-const API_URL = 'http://192.168.0.31:8404'; 
+let API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.0.31:8404';
+
+if (__DEV__) {
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    API_URL = `http://${ip}:8404`;
+  }
+}
 
 const api = axios.create({
   baseURL: API_URL,

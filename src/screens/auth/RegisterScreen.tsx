@@ -59,7 +59,7 @@ export default function RegisterScreen() {
         <View style={styles.form}>
           <View style={styles.row}>
             <Input
-              containerStyle={{ flex: 1, marginRight: 8 }}
+              containerStyle={styles.firstNameInput}
               label="Nome"
               placeholder="Ex: João"
               iconName="user"
@@ -67,7 +67,7 @@ export default function RegisterScreen() {
               onChangeText={setFirstName}
             />
             <Input
-              containerStyle={{ flex: 1, marginLeft: 8 }}
+              containerStyle={styles.lastNameInput}
               label="Sobrenome"
               placeholder="Ex: Silva"
               value={lastName}
@@ -146,6 +146,14 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  firstNameInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  lastNameInput: {
+    flex: 1,
+    marginLeft: 8,
   },
   buttonSpacing: {
     marginTop: 24,
