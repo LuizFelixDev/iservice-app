@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,48 +9,95 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
+
 import { colors } from '@/colors/Colors';
 import { styles } from './HomeClientStyle';
+
+import { usersService } from '@/services/users';
+import { jobsService, Job } from '@/services/jobs';
 
 // ── Tipos ────────────────────────────────────────────────────────
 
 interface Chamado {
   id: string;
-  status: 'a_caminho' | 'aguardando' | 'concluido';
-  titulo: string;
-  profissional: { iniciais: string; nome: string };
+  status:
+    | 'searching'
+    | 'negotiating'
+    | 'accepted'
+    | 'completed'
+    | 'canceled';
+
+  description: string;
+
+  professional?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
 }
 
-// ── Dados mockados ───────────────────────────────────────────────
-
-const MOCK_CHAMADOS: Chamado[] = [
-  {
-    id: '1',
-    status: 'a_caminho',
-    titulo: 'Vazamento na pia da cozinha',
-    profissional: { iniciais: 'JS', nome: 'João Silva' },
+const STATUS_CONFIG = {
+  searching: {
+    label: 'PROCURANDO PROFISSIONAL',
+    color: colors.primary,
   },
-];
 
-const STATUS_CONFIG: Record<Chamado['status'], { label: string; color: string }> = {
-  a_caminho: { label: 'PROFISSIONAL A CAMINHO!', color: '#16A34A' },
-  aguardando: { label: 'AGUARDANDO PROFISSIONAL', color: colors.primary },
-  concluido:  { label: 'CONCLUÍDO',               color: colors.onSurfaceVariant },
+  negotiating: {
+    label: 'NEGOCIANDO',
+    color: '#F59E0B',
+  },
+
+  accepted: {
+    label: 'PROFISSIONAL A CAMINHO!',
+    color: '#16A34A',
+  },
+
+  completed: {
+    label: 'CONCLUÍDO',
+    color: colors.onSurfaceVariant,
+  },
+
+  canceled: {
+    label: 'CANCELADO',
+    color: colors.error,
+  },
 };
 
 // ── Sub-componentes ──────────────────────────────────────────────
 
-function Header({ userName, onBellPress }: { userName: string; onBellPress: () => void }) {
+function Header({
+  userName,
+  onBellPress,
+}: {
+  userName: string;
+  onBellPress: () => void;
+}) {
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
         <View style={styles.avatar}>
-          <Ionicons name="person" size={20} color={colors.onSurfaceVariant} />
+          <Ionicons
+            name="person"
+            size={20}
+            color={colors.onSurfaceVariant}
+          />
         </View>
-        <Text style={styles.greeting}>Olá, {userName}</Text>
+
+        <Text style={styles.greeting}>
+          Olá, {userName}
+        </Text>
       </View>
-      <TouchableOpacity style={styles.bellBtn} onPress={onBellPress} activeOpacity={0.7}>
-        <Ionicons name="notifications-outline" size={22} color={colors.onSurface} />
+
+      <TouchableOpacity
+        style={styles.bellBtn}
+        onPress={onBellPress}
+        activeOpacity={0.7}
+      >
+        <Ionicons
+          name="notifications-outline"
+          size={22}
+          color={colors.onSurface}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -69,14 +116,21 @@ function ServiceRequestCard({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>Do que você precisa agora?</Text>
+      <Text style={styles.cardTitle}>
+        Do que você precisa agora?
+      </Text>
 
-      <Text style={styles.inputLabel}>DESCRIÇÃO DO PROBLEMA</Text>
+      <Text style={styles.inputLabel}>
+        DESCREVA O PROBLEMA
+      </Text>
+
       <TextInput
         style={styles.textInput}
         multiline
         numberOfLines={3}
-        placeholder={'Descreva o problema... Ex:\nEncanamento vazando, bateria\ndo carro arriada, etc.'}
+        placeholder={
+          'Ex: Encanamento vazando, bateria\ndo carro arriada, etc.'
+        }
         placeholderTextColor={colors.onSurfaceVariant}
         value={descricao}
         onChangeText={onChangeDescricao}
@@ -84,18 +138,34 @@ function ServiceRequestCard({
       />
 
       <View style={styles.locationRow}>
-        <Ionicons name="location-sharp" size={16} color={colors.primary} />
-        <Text style={styles.locationText}>Localização capturada com sucesso</Text>
+        <Ionicons
+          name="location-sharp"
+          size={16}
+          color={colors.primary}
+        />
+        <Text style={styles.locationText}>
+          Localização será enviada na solicitação
+        </Text>
       </View>
 
       <TouchableOpacity
-        style={[styles.ctaBtn, isDisabled && styles.ctaBtnDisabled]}
+        style={[
+          styles.ctaBtn,
+          isDisabled && styles.ctaBtnDisabled,
+        ]}
         onPress={onSolicitar}
         activeOpacity={0.85}
         disabled={isDisabled}
       >
-        <Text style={styles.ctaBtnText}>Solicitar Profissional Próximo</Text>
-        <Feather name="arrow-right" size={18} color={colors.white} />
+        <Text style={styles.ctaBtnText}>
+          Solicitar Profissional Próximo
+        </Text>
+
+        <Feather
+          name="arrow-right"
+          size={18}
+          color={colors.white}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -108,27 +178,88 @@ function ChamadoCard({
   chamado: Chamado;
   onCancelar: (id: string) => void;
 }) {
-  const { label, color } = STATUS_CONFIG[chamado.status];
+  const config = STATUS_CONFIG[chamado.status];
+
+  const professionalName = chamado.professional
+    ? `${chamado.professional.firstName} ${chamado.professional.lastName}`
+    : 'Aguardando profissional';
+
+  const initials = chamado.professional
+    ? `${chamado.professional.firstName?.[0] ?? ''}${
+        chamado.professional.lastName?.[0] ?? ''
+      }`
+    : '--';
 
   return (
     <View style={styles.chamadoCard}>
       <View style={styles.statusRow}>
-        <View style={[styles.statusDot, { backgroundColor: color }]} />
-        <Text style={[styles.statusText, { color }]}>{label}</Text>
-        <TouchableOpacity style={styles.editBtn} activeOpacity={0.7}>
-          <Feather name="edit-2" size={16} color={colors.onSurfaceVariant} />
+        <View
+          style={[
+            styles.statusDot,
+            { backgroundColor: config.color },
+          ]}
+        />
+
+        <Text
+          style={[
+            styles.statusText,
+            { color: config.color },
+          ]}
+        >
+          {config.label}
+        </Text>
+
+        <TouchableOpacity
+          style={styles.editBtn}
+          activeOpacity={0.7}
+          onPress={() =>
+            Alert.alert(
+              'Indisponível',
+              'Edição ainda não implementada.'
+            )
+          }
+        >
+          <Feather
+            name="edit-2"
+            size={16}
+            color={colors.onSurfaceVariant}
+          />
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.chamadoTitulo}>{chamado.titulo}</Text>
+      <Text
+        style={styles.chamadoTitulo}
+        numberOfLines={2}
+      >
+        {chamado.description}
+      </Text>
 
       <View style={styles.profRow}>
         <View style={styles.profAvatar}>
-          <Text style={styles.profAvatarText}>{chamado.profissional.iniciais}</Text>
+          <Text style={styles.profAvatarText}>
+            {initials}
+          </Text>
         </View>
-        <Text style={styles.profNome}>{chamado.profissional.nome}</Text>
-        <TouchableOpacity style={styles.chatBtn} activeOpacity={0.7}>
-          <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.primary} />
+
+        <Text style={styles.profNome}>
+          {professionalName}
+        </Text>
+
+        <TouchableOpacity
+          style={styles.chatBtn}
+          activeOpacity={0.7}
+          onPress={() =>
+            Alert.alert(
+              'Indisponível',
+              'Chat ainda não implementado.'
+            )
+          }
+        >
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={20}
+            color={colors.primary}
+          />
         </TouchableOpacity>
       </View>
 
@@ -137,7 +268,9 @@ function ChamadoCard({
         onPress={() => onCancelar(chamado.id)}
         activeOpacity={0.8}
       >
-        <Text style={styles.cancelarText}>Cancelar Serviço</Text>
+        <Text style={styles.cancelarText}>
+          Cancelar Serviço
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -147,14 +280,64 @@ function ChamadoCard({
 
 export default function HomeClient() {
   const [descricao, setDescricao] = useState('');
+  const [userName, setUserName] = useState('Usuário');
+  const [jobs, setJobs] = useState<Job[]>([]);
 
-  const handleSolicitar = () => {
-    if (!descricao.trim()) return;
-    Alert.alert('Solicitando profissional para: ' + descricao);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [user, jobsResponse] =
+        await Promise.all([
+          usersService.getMe(),
+          jobsService.getMyJobs(),
+        ]);
+
+      setUserName(user.firstName || 'Usuário');
+      setJobs(jobsResponse);
+    } catch {
+      Alert.alert(
+        'Erro',
+        'Não foi possível carregar os dados.'
+      );
+    }
+  };
+
+  const handleSolicitar = async () => {
+    if (!descricao.trim()) {
+      return;
+    }
+
+    try {
+      await jobsService.createJob({
+        description: descricao,
+        latitude: 0,
+        longitude: 0,
+      });
+
+      setDescricao('');
+
+      await loadData();
+
+      Alert.alert(
+        'Sucesso',
+        'Solicitação enviada com sucesso.'
+      );
+    } catch {
+      Alert.alert(
+        'Erro',
+        'Não foi possível criar o chamado.'
+      );
+    }
   };
 
   const handleCancelar = (id: string) => {
-    Alert.alert('Chamado ' + id + ' cancelado');
+    Alert.alert(
+      'Indisponível',
+      `O cancelamento do chamado ainda não foi implementado.`
+    );
   };
 
   return (
@@ -164,7 +347,15 @@ export default function HomeClient() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Header userName="Usuário" onBellPress={() => {}} />
+        <Header
+          userName={userName}
+          onBellPress={() =>
+            Alert.alert(
+              'Indisponível',
+              'Notificações ainda não implementadas.'
+            )
+          }
+        />
 
         <ServiceRequestCard
           descricao={descricao}
@@ -173,20 +364,44 @@ export default function HomeClient() {
         />
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Meus Chamados</Text>
-          <TouchableOpacity activeOpacity={0.7}>
-            <Text style={styles.verTodos}>Ver todos</Text>
+          <Text style={styles.sectionTitle}>
+            Meus Chamados
+          </Text>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() =>
+              Alert.alert(
+                'Indisponível',
+                'Tela de listagem completa ainda não implementada.'
+              )
+            }
+          >
+            <Text style={styles.verTodos}>
+              Ver todos
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {MOCK_CHAMADOS.length === 0 ? (
+        {jobs.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialIcons name="assignment" size={40} color={colors.onSurfaceVariant} />
-            <Text style={styles.emptyText}>Nenhum chamado ativo</Text>
+            <MaterialIcons
+              name="assignment"
+              size={40}
+              color={colors.onSurfaceVariant}
+            />
+
+            <Text style={styles.emptyText}>
+              Nenhum chamado ativo
+            </Text>
           </View>
         ) : (
-          MOCK_CHAMADOS.map((c) => (
-            <ChamadoCard key={c.id} chamado={c} onCancelar={handleCancelar} />
+          jobs.map((job) => (
+            <ChamadoCard
+              key={job.id}
+              chamado={job}
+              onCancelar={handleCancelar}
+            />
           ))
         )}
       </ScrollView>
