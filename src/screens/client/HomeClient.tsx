@@ -1,40 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   Alert,
+  ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
+import {
+  Ionicons,
+  Feather,
+  MaterialIcons,
+} from '@expo/vector-icons';
 
 import { colors } from '@/colors/Colors';
 import { styles } from './HomeClientStyle';
 
 import { usersService } from '@/services/users';
 import { jobsService, Job } from '@/services/jobs';
-
-// ── Tipos ────────────────────────────────────────────────────────
-
-interface Chamado {
-  id: string;
-  status:
-    | 'searching'
-    | 'negotiating'
-    | 'accepted'
-    | 'completed'
-    | 'canceled';
-
-  description: string;
-
-  professional?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  } | null;
-}
+import { getCurrentLocation } from '@/services/location';
 
 const STATUS_CONFIG = {
   searching: {
@@ -61,9 +52,7 @@ const STATUS_CONFIG = {
     label: 'CANCELADO',
     color: colors.error,
   },
-};
-
-// ── Sub-componentes ──────────────────────────────────────────────
+} as const;
 
 function Header({
   userName,
@@ -91,7 +80,6 @@ function Header({
       <TouchableOpacity
         style={styles.bellBtn}
         onPress={onBellPress}
-        activeOpacity={0.7}
       >
         <Ionicons
           name="notifications-outline"
@@ -105,14 +93,17 @@ function Header({
 
 function ServiceRequestCard({
   descricao,
+  loading,
   onChangeDescricao,
   onSolicitar,
 }: {
   descricao: string;
+  loading: boolean;
   onChangeDescricao: (text: string) => void;
   onSolicitar: () => void;
 }) {
-  const isDisabled = !descricao.trim();
+  const isDisabled =
+    !descricao.trim() || loading;
 
   return (
     <View style={styles.card}>
@@ -128,13 +119,14 @@ function ServiceRequestCard({
         style={styles.textInput}
         multiline
         numberOfLines={3}
-        placeholder={
-          'Ex: Encanamento vazando, bateria\ndo carro arriada, etc.'
-        }
-        placeholderTextColor={colors.onSurfaceVariant}
         value={descricao}
         onChangeText={onChangeDescricao}
         textAlignVertical="top"
+        editable={!loading}
+        placeholder="Ex: Encanamento vazando..."
+        placeholderTextColor={
+          colors.onSurfaceVariant
+        }
       />
 
       <View style={styles.locationRow}>
@@ -144,28 +136,35 @@ function ServiceRequestCard({
           color={colors.primary}
         />
         <Text style={styles.locationText}>
-          Localização será enviada na solicitação
+          Localização será enviada automaticamente
         </Text>
       </View>
 
       <TouchableOpacity
+        disabled={isDisabled}
+        onPress={onSolicitar}
         style={[
           styles.ctaBtn,
           isDisabled && styles.ctaBtnDisabled,
         ]}
-        onPress={onSolicitar}
-        activeOpacity={0.85}
-        disabled={isDisabled}
       >
-        <Text style={styles.ctaBtnText}>
-          Solicitar Profissional Próximo
-        </Text>
+        {loading ? (
+          <ActivityIndicator
+            color={colors.white}
+          />
+        ) : (
+          <>
+            <Text style={styles.ctaBtnText}>
+              Solicitar Profissional Próximo
+            </Text>
 
-        <Feather
-          name="arrow-right"
-          size={18}
-          color={colors.white}
-        />
+            <Feather
+              name="arrow-right"
+              size={18}
+              color={colors.white}
+            />
+          </>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -175,20 +174,26 @@ function ChamadoCard({
   chamado,
   onCancelar,
 }: {
-  chamado: Chamado;
+  chamado: Job;
   onCancelar: (id: string) => void;
 }) {
-  const config = STATUS_CONFIG[chamado.status];
+  const config =
+    STATUS_CONFIG[
+      chamado.status as keyof typeof STATUS_CONFIG
+    ] ?? STATUS_CONFIG.searching;
 
-  const professionalName = chamado.professional
-    ? `${chamado.professional.firstName} ${chamado.professional.lastName}`
-    : 'Aguardando profissional';
+  const professionalName =
+    chamado.professional
+      ? `${chamado.professional.firstName} ${chamado.professional.lastName}`
+      : 'Aguardando profissional';
 
-  const initials = chamado.professional
-    ? `${chamado.professional.firstName?.[0] ?? ''}${
-        chamado.professional.lastName?.[0] ?? ''
-      }`
-    : '--';
+  const initials =
+    chamado.professional
+      ? `${chamado.professional.firstName?.charAt(0) ?? ''}${
+          chamado.professional.lastName?.charAt(0) ??
+          ''
+        }`
+      : '?';
 
   return (
     <View style={styles.chamadoCard}>
@@ -196,35 +201,22 @@ function ChamadoCard({
         <View
           style={[
             styles.statusDot,
-            { backgroundColor: config.color },
+            {
+              backgroundColor: config.color,
+            },
           ]}
         />
 
         <Text
           style={[
             styles.statusText,
-            { color: config.color },
+            {
+              color: config.color,
+            },
           ]}
         >
           {config.label}
         </Text>
-
-        <TouchableOpacity
-          style={styles.editBtn}
-          activeOpacity={0.7}
-          onPress={() =>
-            Alert.alert(
-              'Indisponível',
-              'Edição ainda não implementada.'
-            )
-          }
-        >
-          <Feather
-            name="edit-2"
-            size={16}
-            color={colors.onSurfaceVariant}
-          />
-        </TouchableOpacity>
       </View>
 
       <Text
@@ -236,9 +228,19 @@ function ChamadoCard({
 
       <View style={styles.profRow}>
         <View style={styles.profAvatar}>
-          <Text style={styles.profAvatarText}>
-            {initials}
-          </Text>
+          {chamado.professional ? (
+            <Text
+              style={styles.profAvatarText}
+            >
+              {initials}
+            </Text>
+          ) : (
+            <Ionicons
+              name="search"
+              size={18}
+              color={colors.white}
+            />
+          )}
         </View>
 
         <Text style={styles.profNome}>
@@ -247,7 +249,6 @@ function ChamadoCard({
 
         <TouchableOpacity
           style={styles.chatBtn}
-          activeOpacity={0.7}
           onPress={() =>
             Alert.alert(
               'Indisponível',
@@ -265,8 +266,9 @@ function ChamadoCard({
 
       <TouchableOpacity
         style={styles.cancelarBtn}
-        onPress={() => onCancelar(chamado.id)}
-        activeOpacity={0.8}
+        onPress={() =>
+          onCancelar(chamado.id)
+        }
       >
         <Text style={styles.cancelarText}>
           Cancelar Serviço
@@ -276,135 +278,237 @@ function ChamadoCard({
   );
 }
 
-// ── Tela principal ───────────────────────────────────────────────
-
 export default function HomeClient() {
-  const [descricao, setDescricao] = useState('');
-  const [userName, setUserName] = useState('Usuário');
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [descricao, setDescricao] =
+    useState('');
+
+  const [userName, setUserName] =
+    useState('Usuário');
+
+  const [jobs, setJobs] = useState<Job[]>(
+    []
+  );
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [refreshing, setRefreshing] =
+    useState(false);
+
+  const [creatingJob, setCreatingJob] =
+    useState(false);
+
+  const loadData = useCallback(
+    async (showLoader = false) => {
+      try {
+        if (showLoader) {
+          setLoading(true);
+        }
+
+        const [user, jobsResponse] =
+          await Promise.all([
+            usersService.getMe(),
+            jobsService.getMyJobs(),
+          ]);
+
+        setUserName(
+          user.firstName || 'Usuário'
+        );
+
+        setJobs(jobsResponse);
+      } catch {
+        Alert.alert(
+          'Erro',
+          'Não foi possível carregar os dados.'
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
+    loadData(true);
+  }, [loadData]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
     loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [user, jobsResponse] =
-        await Promise.all([
-          usersService.getMe(),
-          jobsService.getMyJobs(),
-        ]);
-
-      setUserName(user.firstName || 'Usuário');
-      setJobs(jobsResponse);
-    } catch {
-      Alert.alert(
-        'Erro',
-        'Não foi possível carregar os dados.'
-      );
-    }
   };
 
-  const handleSolicitar = async () => {
-    if (!descricao.trim()) {
-      return;
-    }
+  const handleSolicitar =
+    async () => {
+      if (creatingJob) {
+        return;
+      }
 
-    try {
-      await jobsService.createJob({
-        description: descricao,
-        latitude: 0,
-        longitude: 0,
-      });
+      const description =
+        descricao.trim();
 
-      setDescricao('');
+      if (!description) {
+        Alert.alert(
+          'Descrição obrigatória',
+          'Descreva o serviço que você precisa.'
+        );
+        return;
+      }
 
-      await loadData();
+      try {
+        setCreatingJob(true);
 
-      Alert.alert(
-        'Sucesso',
-        'Solicitação enviada com sucesso.'
-      );
-    } catch {
-      Alert.alert(
-        'Erro',
-        'Não foi possível criar o chamado.'
-      );
-    }
-  };
+        const {
+          latitude,
+          longitude,
+        } =
+          await getCurrentLocation();
 
-  const handleCancelar = (id: string) => {
+        await jobsService.createJob({
+          description,
+          latitude,
+          longitude,
+        });
+
+        setDescricao('');
+
+        await loadData();
+
+        Alert.alert(
+          'Sucesso',
+          'Solicitação enviada com sucesso.'
+        );
+      } catch (error) {
+        console.error(error);
+
+        Alert.alert(
+          'Erro',
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível criar o chamado.'
+        );
+      } finally {
+        setCreatingJob(false);
+      }
+    };
+
+  const handleCancelar = (
+    id: string
+  ) => {
     Alert.alert(
-      'Indisponível',
-      `O cancelamento do chamado ainda não foi implementado.`
+      'Cancelar serviço',
+      'Deseja realmente cancelar este serviço?',
+      [
+        {
+          text: 'Não',
+          style: 'cancel',
+        },
+        {
+          text: 'Sim',
+          onPress: () => {
+            console.log(
+              'Cancelar:',
+              id
+            );
+          },
+        },
+      ]
     );
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.safe,
+          {
+            justifyContent: 'center',
+            alignItems: 'center',
+          },
+        ]}
+      >
+        <ActivityIndicator
+          size="large"
+          color={colors.primary}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <Header
-          userName={userName}
-          onBellPress={() =>
-            Alert.alert(
-              'Indisponível',
-              'Notificações ainda não implementadas.'
-            )
-          }
-        />
+      <FlatList
+        data={jobs}
+        keyExtractor={(item) => item.id}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        contentContainerStyle={
+          styles.scrollContent
+        }
+        ListHeaderComponent={
+          <>
+            <Header
+              userName={userName}
+              onBellPress={() =>
+                Alert.alert(
+                  'Indisponível',
+                  'Notificações ainda não implementadas.'
+                )
+              }
+            />
 
-        <ServiceRequestCard
-          descricao={descricao}
-          onChangeDescricao={setDescricao}
-          onSolicitar={handleSolicitar}
-        />
+            <ServiceRequestCard
+              descricao={descricao}
+              loading={creatingJob}
+              onChangeDescricao={
+                setDescricao
+              }
+              onSolicitar={
+                handleSolicitar
+              }
+            />
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            Meus Chamados
-          </Text>
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() =>
-              Alert.alert(
-                'Indisponível',
-                'Tela de listagem completa ainda não implementada.'
-              )
-            }
-          >
-            <Text style={styles.verTodos}>
-              Ver todos
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {jobs.length === 0 ? (
+            <View
+              style={
+                styles.sectionHeader
+              }
+            >
+              <Text
+                style={
+                  styles.sectionTitle
+                }
+              >
+                Meus Chamados
+              </Text>
+            </View>
+          </>
+        }
+        ListEmptyComponent={
           <View style={styles.emptyState}>
             <MaterialIcons
               name="assignment"
               size={40}
-              color={colors.onSurfaceVariant}
+              color={
+                colors.onSurfaceVariant
+              }
             />
 
-            <Text style={styles.emptyText}>
+            <Text
+              style={styles.emptyText}
+            >
               Nenhum chamado ativo
             </Text>
           </View>
-        ) : (
-          jobs.map((job) => (
-            <ChamadoCard
-              key={job.id}
-              chamado={job}
-              onCancelar={handleCancelar}
-            />
-          ))
+        }
+        renderItem={({ item }) => (
+          <ChamadoCard
+            chamado={item}
+            onCancelar={
+              handleCancelar
+            }
+          />
         )}
-      </ScrollView>
+      />
     </SafeAreaView>
   );
 }
