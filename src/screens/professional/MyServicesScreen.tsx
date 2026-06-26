@@ -6,6 +6,8 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { colors } from '@/colors/Colors';
 import { jobsService, Job } from '@/services/jobs';
+import { reviewsService } from '@/services/reviews';
+import { RatingModal } from '@/components';
 import { styles } from './MyServicesStyle';
 
 const STATUS_CONFIG = {
@@ -21,6 +23,8 @@ export default function MyServicesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [selectedJobIdForRating, setSelectedJobIdForRating] = useState<string | null>(null);
+  const [evaluatedJobs, setEvaluatedJobs] = useState<string[]>([]);
 
   const loadJobs = useCallback(async (isRefresh = false) => {
     try {
@@ -39,6 +43,7 @@ export default function MyServicesScreen() {
   useFocusEffect(
     useCallback(() => {
       loadJobs();
+      reviewsService.getEvaluatedJobs().then(setEvaluatedJobs);
     }, [loadJobs])
   );
 
@@ -48,6 +53,7 @@ export default function MyServicesScreen() {
       await jobsService.completeJob(id);
       Alert.alert('Sucesso', 'Serviço marcado como concluído.');
       loadJobs();
+      setSelectedJobIdForRating(id);
     } catch (error) {
       console.error(error);
       Alert.alert('Erro', 'Não foi possível concluir o serviço.');
@@ -120,6 +126,17 @@ export default function MyServicesScreen() {
             </TouchableOpacity>
           </View>
         )}
+
+        {item.status === 'completed' && !evaluatedJobs.includes(item.id) && (
+          <View style={styles.actionRow}>
+            <TouchableOpacity 
+              style={[styles.btnBase, styles.evaluateBtn]}
+              onPress={() => setSelectedJobIdForRating(item.id)}
+            >
+              <Text style={styles.evaluateText}>Avaliar Cliente</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     );
   };
@@ -151,6 +168,21 @@ export default function MyServicesScreen() {
           </View>
         }
       />
+
+      {selectedJobIdForRating && (
+        <RatingModal
+          visible={!!selectedJobIdForRating}
+          jobId={selectedJobIdForRating}
+          onClose={() => setSelectedJobIdForRating(null)}
+          onSuccess={() => {
+            if (selectedJobIdForRating) {
+              setEvaluatedJobs((prev) => [...prev, selectedJobIdForRating]);
+              reviewsService.saveEvaluatedJob(selectedJobIdForRating);
+            }
+            setSelectedJobIdForRating(null);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

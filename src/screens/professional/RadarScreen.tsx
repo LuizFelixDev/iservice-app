@@ -8,7 +8,7 @@ import { colors } from '@/colors/Colors';
 import { jobsService, Job } from '@/services/jobs';
 import { usersService } from '@/services/users';
 import { getCurrentLocation } from '@/services/location';
-import { Typography, Spacer } from '@/components';
+import { Typography, Spacer, UserRating } from '@/components';
 
 export default function RadarScreen() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -67,8 +67,11 @@ export default function RadarScreen() {
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Ionicons name="location" size={20} color={colors.primary} />
-          <Text style={styles.cardTitle}>Serviço Próximo</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="location" size={20} color={colors.primary} />
+            <Text style={styles.cardTitle}>Serviço Próximo</Text>
+          </View>
+          {item.client?.id && <UserRating userId={item.client.id} />}
         </View>
         <Text style={styles.description}>{item.description}</Text>
         <TouchableOpacity
@@ -154,6 +157,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
   cardTitle: {

@@ -21,10 +21,12 @@ import {
 } from '@expo/vector-icons';
 
 import { colors } from '@/colors/Colors';
+import { RatingModal } from '@/components';
 import { styles } from './HomeClientStyle';
 
 import { usersService } from '@/services/users';
 import { jobsService, Job } from '@/services/jobs';
+import { reviewsService } from '@/services/reviews';
 import { getCurrentLocation } from '@/services/location';
 
 const STATUS_CONFIG = {
@@ -169,13 +171,16 @@ function ServiceRequestCard({
     </View>
   );
 }
-
 function ChamadoCard({
   chamado,
   onCancelar,
+  onAvaliar,
+  isEvaluated,
 }: {
   chamado: Job;
   onCancelar: (id: string) => void;
+  onAvaliar: (id: string) => void;
+  isEvaluated: boolean;
 }) {
   const config =
     STATUS_CONFIG[
@@ -272,6 +277,15 @@ function ChamadoCard({
           <Text style={styles.cancelarText}>Cancelar Serviço</Text>
         </TouchableOpacity>
       )}
+
+      {chamado.status === 'completed' && !isEvaluated && (
+        <TouchableOpacity
+          style={styles.avaliarBtn}
+          onPress={() => onAvaliar(chamado.id)}
+        >
+          <Text style={styles.avaliarText}>Avaliar Profissional</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -295,6 +309,11 @@ export default function HomeClient() {
 
   const [creatingJob, setCreatingJob] =
     useState(false);
+
+  const [selectedJobIdForRating, setSelectedJobIdForRating] = 
+    useState<string | null>(null);
+
+  const [evaluatedJobs, setEvaluatedJobs] = useState<string[]>([]);
 
   const loadData = useCallback(
     async (showLoader = false) => {
@@ -329,6 +348,7 @@ export default function HomeClient() {
 
   useEffect(() => {
     loadData(true);
+    reviewsService.getEvaluatedJobs().then(setEvaluatedJobs);
   }, [loadData]);
 
   const handleRefresh = () => {
@@ -510,9 +530,26 @@ export default function HomeClient() {
             onCancelar={
               handleCancelar
             }
+            onAvaliar={setSelectedJobIdForRating}
+            isEvaluated={evaluatedJobs.includes(item.id)}
           />
         )}
       />
+
+      {selectedJobIdForRating && (
+        <RatingModal
+          visible={!!selectedJobIdForRating}
+          jobId={selectedJobIdForRating}
+          onClose={() => setSelectedJobIdForRating(null)}
+          onSuccess={() => {
+            if (selectedJobIdForRating) {
+              setEvaluatedJobs((prev) => [...prev, selectedJobIdForRating]);
+              reviewsService.saveEvaluatedJob(selectedJobIdForRating);
+            }
+            setSelectedJobIdForRating(null);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
