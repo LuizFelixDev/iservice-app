@@ -25,6 +25,17 @@ export default function RegisterScreen() {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
       return;
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Erro', 'Por favor, insira um e-mail válido.');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
     
     if (password !== confirmPassword) {
       Alert.alert('Erro', 'As senhas não coincidem.');

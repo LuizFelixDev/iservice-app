@@ -10,11 +10,12 @@ import { Screen, Typography, Button, ControlledInput, Spacer } from '@/component
 import { colors } from '@/colors/Colors';
 import { usersService, UpdateProfileDto } from '@/services/users';
 import { useAuth } from '@/contexts/AuthContext';
+import { maskDocument, maskPhone } from '@/utils/masks';
 
 const updateProfileSchema = z.object({
   bio: z.string().min(10, 'A bio deve ter pelo menos 10 caracteres'),
-  phoneNumber: z.string().min(10, 'Telefone inválido'),
-  document: z.string().min(11, 'Documento inválido'),
+  phoneNumber: z.string().min(14, 'Telefone inválido'),
+  document: z.string().min(14, 'Documento inválido'),
 });
 
 type UpdateProfileData = z.infer<typeof updateProfileSchema>;
@@ -109,6 +110,7 @@ export default function UpdateProfileScreen() {
         placeholder="(11) 99999-9999"
         error={errors.phoneNumber?.message}
         keyboardType="phone-pad"
+        mask={maskPhone}
       />
 
       <Spacer size={16} />
@@ -120,6 +122,7 @@ export default function UpdateProfileScreen() {
         placeholder="000.000.000-00"
         error={errors.document?.message}
         keyboardType="numeric"
+        mask={maskDocument}
       />
 
       <Spacer size={24} />
