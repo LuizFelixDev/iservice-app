@@ -14,14 +14,10 @@ import {
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Ionicons,
-  Feather,
-  MaterialIcons,
-} from '@expo/vector-icons';
+import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
 
 import { colors } from '@/colors/Colors';
-import { RatingModal } from '@/components';
+import { RatingModal, LocationPickerModal } from '@/components';
 import { styles } from './HomeClientStyle';
 
 import { usersService } from '@/services/users';
@@ -96,13 +92,17 @@ function Header({
 function ServiceRequestCard({
   descricao,
   loading,
+  customLocation,
   onChangeDescricao,
   onSolicitar,
+  onOpenMap,
 }: {
   descricao: string;
   loading: boolean;
+  customLocation: { latitude: number; longitude: number } | null;
   onChangeDescricao: (text: string) => void;
   onSolicitar: () => void;
+  onOpenMap: () => void;
 }) {
   const isDisabled =
     !descricao.trim() || loading;
@@ -131,16 +131,18 @@ function ServiceRequestCard({
         }
       />
 
-      <View style={styles.locationRow}>
+      <TouchableOpacity style={styles.locationRow} onPress={onOpenMap}>
         <Ionicons
           name="location-sharp"
           size={16}
           color={colors.primary}
         />
         <Text style={styles.locationText}>
-          Localização será enviada automaticamente
+          {customLocation
+            ? 'Localização selecionada no mapa'
+            : 'Usar minha localização atual (Automático)'}
         </Text>
-      </View>
+      </TouchableOpacity>
 
       <TouchableOpacity
         disabled={isDisabled}
@@ -314,6 +316,8 @@ export default function HomeClient() {
     useState<string | null>(null);
 
   const [evaluatedJobs, setEvaluatedJobs] = useState<string[]>([]);
+  const [mapModalVisible, setMapModalVisible] = useState(false);
+  const [customLocation, setCustomLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const loadData = useCallback(
     async (showLoader = false) => {
@@ -376,11 +380,17 @@ export default function HomeClient() {
       try {
         setCreatingJob(true);
 
-        const {
-          latitude,
-          longitude,
-        } =
-          await getCurrentLocation();
+        let latitude: number;
+        let longitude: number;
+
+        if (customLocation) {
+          latitude = customLocation.latitude;
+          longitude = customLocation.longitude;
+        } else {
+          const loc = await getCurrentLocation();
+          latitude = loc.latitude;
+          longitude = loc.longitude;
+        }
 
         await jobsService.createJob({
           description,
@@ -389,6 +399,7 @@ export default function HomeClient() {
         });
 
         setDescricao('');
+        setCustomLocation(null);
 
         await loadData();
 
@@ -484,12 +495,14 @@ export default function HomeClient() {
             <ServiceRequestCard
               descricao={descricao}
               loading={creatingJob}
+              customLocation={customLocation}
               onChangeDescricao={
                 setDescricao
               }
               onSolicitar={
                 handleSolicitar
               }
+              onOpenMap={() => setMapModalVisible(true)}
             />
 
             <View
@@ -550,6 +563,12 @@ export default function HomeClient() {
           }}
         />
       )}
+
+      <LocationPickerModal
+        visible={mapModalVisible}
+        onClose={() => setMapModalVisible(false)}
+        onSelectLocation={(lat, lng) => setCustomLocation({ latitude: lat, longitude: lng })}
+      />
     </SafeAreaView>
   );
 }
