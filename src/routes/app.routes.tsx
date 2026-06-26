@@ -6,7 +6,7 @@ import { colors } from '@/colors/Colors';
 
 import HomeClient from '../screens/client/HomeClient';
 import RadarScreen from '../screens/professional/RadarScreen';
-import SelectServiceByProfi from '../screens/professional/SelectServiceByProfi'; 
+import MyServicesScreen from '../screens/professional/MyServicesScreen'; 
 import ProfileRoutes from './profile.routes';
 
 const AppTab = createBottomTabNavigator();
@@ -43,11 +43,18 @@ export default function AppRoutes() {
       })}
     >
       {role === 'PROFESSIONAL' ? (
-        <AppTab.Screen 
-          name="Radar" 
-          component={RadarScreen} 
-          options={{ title: 'Radar' }}
-        />
+        <>
+          <AppTab.Screen 
+            name="Radar" 
+            component={RadarScreen} 
+            options={{ title: 'Radar' }}
+          />
+          <AppTab.Screen 
+            name="Serviços" 
+            component={MyServicesScreen} 
+            options={{ title: 'Serviços' }}
+          />
+        </>
       ) : (
         <AppTab.Screen 
           name="Início" 
@@ -55,13 +62,6 @@ export default function AppRoutes() {
           options={{ title: 'Solicitar' }}
         />
       )}
-      
-      {/* 2. NOVA TELA FORA DA CONDICIONAL (Apenas para teste) */}
-      <AppTab.Screen 
-        name="Serviços" 
-        component={SelectServiceByProfi} 
-        options={{ title: 'Serviços' }}
-      />
       
       <AppTab.Screen 
         name="Perfil" 
