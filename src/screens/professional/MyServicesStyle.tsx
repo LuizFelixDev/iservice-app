@@ -74,6 +74,9 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.error,
   },
+  evaluateBtn: {
+    backgroundColor: colors.primary,
+  },
   completeText: {
     color: colors.white,
     fontWeight: '600',
@@ -81,6 +84,11 @@ export const styles = StyleSheet.create({
   },
   cancelText: {
     color: colors.error,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  evaluateText: {
+    color: colors.white,
     fontWeight: '600',
     fontSize: 14,
   },
