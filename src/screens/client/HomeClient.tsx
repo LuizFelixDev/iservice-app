@@ -264,16 +264,14 @@ function ChamadoCard({
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={styles.cancelarBtn}
-        onPress={() =>
-          onCancelar(chamado.id)
-        }
-      >
-        <Text style={styles.cancelarText}>
-          Cancelar Serviço
-        </Text>
-      </TouchableOpacity>
+      {!['canceled', 'completed'].includes(chamado.status) && (
+        <TouchableOpacity
+          style={styles.cancelarBtn}
+          onPress={() => onCancelar(chamado.id)}
+        >
+          <Text style={styles.cancelarText}>Cancelar Serviço</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -405,11 +403,17 @@ export default function HomeClient() {
         },
         {
           text: 'Sim',
-          onPress: () => {
-            console.log(
-              'Cancelar:',
-              id
-            );
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await jobsService.cancelJob(id);
+              await loadData();
+              Alert.alert('Sucesso', 'Serviço cancelado com sucesso.');
+            } catch (error) {
+              console.error(error);
+              Alert.alert('Erro', 'Não foi possível cancelar o serviço.');
+              setLoading(false);
+            }
           },
         },
       ]
