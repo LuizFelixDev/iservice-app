@@ -12,17 +12,23 @@ export interface UpdateProfileDto {
 export interface UserResponseDto {
   id: string;
   email: string;
+
+  firstName: string;
+  lastName: string;
+
+  roles: string[];
+
   profile?: {
     bio?: string;
     phoneNumber?: string;
     document?: string;
     photoUrl?: string;
+
     location?: {
       type: string;
       coordinates: number[];
     };
   };
-  roles: any[];
 }
 
 export const usersService = {

@@ -25,6 +25,17 @@ export default function RegisterScreen() {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
       return;
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Erro', 'Por favor, insira um e-mail válido.');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
     
     if (password !== confirmPassword) {
       Alert.alert('Erro', 'As senhas não coincidem.');
@@ -59,7 +70,7 @@ export default function RegisterScreen() {
         <View style={styles.form}>
           <View style={styles.row}>
             <Input
-              containerStyle={{ flex: 1, marginRight: 8 }}
+              containerStyle={styles.firstNameInput}
               label="Nome"
               placeholder="Ex: João"
               iconName="user"
@@ -67,7 +78,7 @@ export default function RegisterScreen() {
               onChangeText={setFirstName}
             />
             <Input
-              containerStyle={{ flex: 1, marginLeft: 8 }}
+              containerStyle={styles.lastNameInput}
               label="Sobrenome"
               placeholder="Ex: Silva"
               value={lastName}
@@ -146,6 +157,14 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  firstNameInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  lastNameInput: {
+    flex: 1,
+    marginLeft: 8,
   },
   buttonSpacing: {
     marginTop: 24,

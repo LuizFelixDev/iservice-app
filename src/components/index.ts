@@ -5,3 +5,6 @@ export * from './Typography';
 export * from './layout/Screen';
 export * from './layout/Spacer';
 export * from './ControlledInput';
+export * from './RatingModal';
+export * from './UserRating';
+export * from './LocationPickerModal';

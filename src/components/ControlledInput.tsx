@@ -14,6 +14,7 @@ interface ControlledInputProps<T extends FieldValues> {
   containerStyle?: ViewStyle;
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  mask?: (value: string) => string;
 }
 
 export function ControlledInput<T extends FieldValues>({
@@ -26,6 +27,7 @@ export function ControlledInput<T extends FieldValues>({
   containerStyle,
   keyboardType = 'default',
   autoCapitalize = 'none',
+  mask,
 }: ControlledInputProps<T>) {
   return (
     <Controller
@@ -39,7 +41,10 @@ export function ControlledInput<T extends FieldValues>({
           iconName={iconName}
           containerStyle={containerStyle}
           value={value as string}
-          onChangeText={onChange}
+          onChangeText={(text) => {
+            const formattedText = mask ? mask(text) : text;
+            onChange(formattedText);
+          }}
           onBlur={onBlur}
           error={error?.message}
           keyboardType={keyboardType}
