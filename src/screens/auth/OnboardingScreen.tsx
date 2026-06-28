@@ -14,7 +14,7 @@ import { Button } from '../../components/Button';
 import { colors } from '../../colors/Colors';
 import { Feather } from '@expo/vector-icons';
 
-const { width, height } = Dimensions.get('window');
+const { width} = Dimensions.get('window');
 
 const SLIDES = [
   {
@@ -73,7 +73,7 @@ export default function OnboardingScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={{ flex: 3 }}>
+      <View style={styles.content}>
         <FlatList
           data={SLIDES}
           renderItem={({ item }) => (
@@ -153,6 +153,9 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     padding: 8,
+  },
+  content: {
+    flex: 3,
   },
   slide: {
     width,

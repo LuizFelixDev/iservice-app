@@ -240,6 +240,18 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  avaliarBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: 9,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  avaliarText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 14,
+  },
 
   // ── Empty state ───────────────────────────────────────────────
   emptyState: {

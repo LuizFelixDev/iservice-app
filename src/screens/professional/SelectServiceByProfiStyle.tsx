@@ -75,6 +75,9 @@ export const styles = StyleSheet.create({
   pillLabelSelected: {
     color: colors.white,
   },
+  pillIcon: {
+    marginRight: 5,
+  },
 
   // List
   listContent: {
