@@ -8,22 +8,34 @@ import { colors } from '@/colors/Colors';
 import { jobsService, Job } from '@/services/jobs';
 import { usersService } from '@/services/users';
 import { getCurrentLocation } from '@/services/location';
-import { Typography, Spacer, UserRating } from '@/components';
+import { Typography, Spacer, UserRating, LocationPickerModal } from '@/components';
 
 export default function RadarScreen() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [mapVisible, setMapVisible] = useState(false);
+  const [customLocation, setCustomLocation] = useState<{lat: number, lng: number} | null>(null);
 
   const navigation = useNavigation<any>();
 
   const loadRadarJobs = useCallback(async (isRefresh = false) => {
     try {
       if (!isRefresh) setLoading(true);
-      const { latitude, longitude } = await getCurrentLocation();
+      
+      let lat: number, lng: number;
+      if (customLocation) {
+        lat = customLocation.lat;
+        lng = customLocation.lng;
+      } else {
+        const coords = await getCurrentLocation();
+        lat = coords.latitude;
+        lng = coords.longitude;
+      }
+
       const [data, me] = await Promise.all([
-        jobsService.getRadarJobs(latitude, longitude, 15000), // 15km
+        jobsService.getRadarJobs(lat, lng, 15000), // 15km
         usersService.getMe()
       ]);
       setJobs(data.filter((job) => job.client?.id !== me.id));
@@ -62,6 +74,20 @@ export default function RadarScreen() {
     }
   };
 
+  const handleUpdateLocation = async (lat: number, lng: number) => {
+    try {
+      setLoading(true);
+      await usersService.updateProfile({ latitude: lat, longitude: lng });
+      setCustomLocation({ lat, lng });
+      Alert.alert('Sucesso', 'Sua base de atuação foi atualizada!');
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Não foi possível atualizar sua base.');
+    } finally {
+      loadRadarJobs();
+    }
+  };
+
   const renderItem = ({ item }: { item: Job }) => {
     const isLoading = actionLoading === item.id;
     return (
@@ -92,7 +118,16 @@ export default function RadarScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Typography variant="h1" color={colors.onSurface}>Radar</Typography>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h1" color={colors.onSurface}>Radar</Typography>
+          <TouchableOpacity 
+            style={styles.changeBaseBtn}
+            onPress={() => setMapVisible(true)}
+          >
+            <MaterialIcons name="edit-location-alt" size={20} color={colors.primary} />
+            <Text style={styles.changeBaseText}>Mudar Base</Text>
+          </TouchableOpacity>
+        </View>
         <Typography variant="body" color={colors.onSurfaceVariant}>Buscando serviços próximos a você</Typography>
       </View>
 
@@ -118,6 +153,12 @@ export default function RadarScreen() {
           }
         />
       )}
+
+      <LocationPickerModal 
+        visible={mapVisible}
+        onClose={() => setMapVisible(false)}
+        onSelectLocation={handleUpdateLocation}
+      />
     </SafeAreaView>
   );
 }
@@ -136,6 +177,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 20,
     gap: 16,
+  },
+  changeBaseBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F3FF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E6E0FF',
+  },
+  changeBaseText: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 13,
+    marginLeft: 4,
   },
   center: {
     flex: 1,

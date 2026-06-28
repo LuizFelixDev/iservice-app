@@ -57,6 +57,11 @@ export default function AppRoutes() {
             component={MyServicesScreen} 
             options={{ title: 'Serviços' }}
           />
+          <AppTab.Screen 
+            name="Portfólio" 
+            component={ProfessionalPortfolio} 
+            options={{ title: 'Portfólio' }}
+          />
         </>
       ) : (
         <AppTab.Screen 
@@ -65,12 +70,6 @@ export default function AppRoutes() {
           options={{ title: 'Solicitar' }}
         />
       )}
-      
-      <AppTab.Screen 
-        name="Portfólio" 
-        component={ProfessionalPortfolio} 
-        options={{ title: 'Portfólio' }}
-      />
       
       <AppTab.Screen 
         name="Perfil" 
