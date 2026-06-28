@@ -152,4 +152,7 @@ export const styles = StyleSheet.create({
     color: colors.onSurfaceVariant,
     fontSize: 15,
   },
+  pillIcon: {
+  marginRight: 5,
+},
 });

@@ -8,6 +8,7 @@ import HomeClient from '../screens/client/HomeClient';
 import RadarScreen from '../screens/professional/RadarScreen';
 import SelectServiceByProfi from '../screens/professional/SelectServiceByProfi'; 
 import ProfileRoutes from './profile.routes';
+import ProfessionalPortfolio from '../screens/professional/ProfessionalPortfolio';
 
 const AppTab = createBottomTabNavigator();
 
@@ -36,6 +37,8 @@ export default function AppRoutes() {
             iconName = focused ? 'briefcase' : 'briefcase-outline';
           } else if (route.name === 'Perfil') {
             iconName = focused ? 'person' : 'person-outline';
+          } else if (route.name === 'Portfólio') {
+            iconName = focused ? 'images' : 'images-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -56,11 +59,16 @@ export default function AppRoutes() {
         />
       )}
       
-      {/* 2. NOVA TELA FORA DA CONDICIONAL (Apenas para teste) */}
       <AppTab.Screen 
         name="Serviços" 
         component={SelectServiceByProfi} 
         options={{ title: 'Serviços' }}
+      />
+
+      <AppTab.Screen 
+        name="Portfólio" 
+        component={ProfessionalPortfolio} 
+        options={{ title: 'Portfólio' }}
       />
       
       <AppTab.Screen 
