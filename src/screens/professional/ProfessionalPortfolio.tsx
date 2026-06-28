@@ -1,150 +1,465 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
-const PROFI_DATA = {
-  name: 'Alex Silva',
-  role: 'Eletricista Master',
-  rating: 4.9,
-  reviewsCount: '120+',
-  avatar: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?q=80&w=200&auto=format&fit=crop',
-  coverImage: 'https://images.unsplash.com/photo-1530124566582-a618bc2615dc?q=80&w=1000&auto=format&fit=crop',
-  portfolio: [
-    {
-      id: '1',
-      title: 'Instalação Painel Elétrico',
-      description: 'Residência alto padrão, modernização completa do quadro de distribuição.',
-      imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=600&auto=format&fit=crop'
-    },
-    {
-      id: '2',
-      title: 'Projeto Iluminação',
-      description: 'Instalação de trilhos e pendentes em escritório corporativo.',
-      imageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=600&auto=format&fit=crop'
-    },
-    {
-      id: '3',
-      title: 'Manutenção Industrial',
-      description: 'Revisão preventiva em maquinário de grande porte.',
-      imageUrl: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=600&auto=format&fit=crop'
-    },
-    {
-      id: '4',
-      title: 'Automação Residencial',
-      description: 'Integração de sistemas de iluminação e segurança.',
-      imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=600&auto=format&fit=crop'
-    }
-  ],
-};
+import { usersService, PortfolioResponseDto } from '../../services/users';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRoute } from '@react-navigation/native';
 
 export default function ProfessionalPortfolio() {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<PortfolioResponseDto | null>(null);
+  
+  // Modal states for Project
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newProjectTitle, setNewProjectTitle] = useState('');
+  const [newProjectDesc, setNewProjectDesc] = useState('');
+  const [addingProject, setAddingProject] = useState(false);
+  const [projectError, setProjectError] = useState('');
+
+  // Modal states for Certificate
+  const [modalCertVisible, setModalCertVisible] = useState(false);
+  const [newCertTitle, setNewCertTitle] = useState('');
+  const [newCertDesc, setNewCertDesc] = useState('');
+  const [addingCert, setAddingCert] = useState(false);
+  const [certError, setCertError] = useState('');
+
+  // Modal states for Edit Profile
+  const [modalProfileVisible, setModalProfileVisible] = useState(false);
+  const [editRoleTitle, setEditRoleTitle] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState('');
+
+  const { user } = useAuth();
+  const route = useRoute<any>();
+
+  const professionalId = route.params?.professionalId || user?.id;
+  const isOwner = user?.id === professionalId;
+
+  const fetchPortfolio = async () => {
+    if (!professionalId) return;
+    try {
+      setLoading(true);
+      const portfolioData = await usersService.getPortfolio(professionalId);
+      setData(portfolioData);
+    } catch (error) {
+      console.error('Failed to fetch portfolio', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPortfolio();
+  }, [professionalId]);
+
+  const handleAddProject = async () => {
+    if (!newProjectTitle || !newProjectDesc) {
+      setProjectError('Preencha todos os campos obrigatórios');
+      return;
+    }
+    setProjectError('');
+    setAddingProject(true);
+    try {
+      const payload = {
+        title: newProjectTitle,
+        description: newProjectDesc,
+      };
+      
+      await usersService.addPortfolioItem(payload);
+      
+      setModalVisible(false);
+      setNewProjectTitle('');
+      setNewProjectDesc('');
+      fetchPortfolio(); // Refresh data
+    } catch (error: any) {
+      console.error('Error adding project:', error);
+      Alert.alert('Erro', error.response?.data?.message || 'Não foi possível adicionar o projeto.');
+    } finally {
+      setAddingProject(false);
+    }
+  };
+
+  const handleAddCertificate = async () => {
+    if (!newCertTitle || !newCertDesc) {
+      setCertError('Preencha todos os campos obrigatórios');
+      return;
+    }
+    setCertError('');
+    setAddingCert(true);
+    try {
+      await usersService.addCertificate({
+        title: newCertTitle,
+        description: newCertDesc,
+        icon: 'medal-outline' // Default icon for now
+      });
+      
+      setModalCertVisible(false);
+      setNewCertTitle('');
+      setNewCertDesc('');
+      fetchPortfolio(); // Refresh data
+    } catch (error: any) {
+      console.error('Error adding certificate:', error);
+      Alert.alert('Erro', error.response?.data?.message || 'Não foi possível adicionar o certificado.');
+    } finally {
+      setAddingCert(false);
+    }
+  };
+
+  const openEditProfile = () => {
+    setEditRoleTitle(data?.roleTitle || '');
+    setEditBio(data?.bio || '');
+    setProfileError('');
+    setModalProfileVisible(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editRoleTitle || !editBio) {
+      setProfileError('Preencha todos os campos obrigatórios');
+      return;
+    }
+    setProfileError('');
+    setSavingProfile(true);
+    try {
+      const payload = {
+        roleTitle: editRoleTitle,
+        bio: editBio,
+      };
+      
+      await usersService.updatePortfolio(payload);
+      
+      setModalProfileVisible(false);
+      fetchPortfolio();
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Erro', error.response?.data?.message || 'Não foi possível atualizar o perfil.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleEditCover = () => {
+    Alert.alert('Em breve', 'A edição de imagens e destaques será integrada com a galeria em breve!');
+  };
+
+  if (loading || !data) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF7A00" />
+        <Text style={styles.loadingText}>Carregando perfil...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
+        {/* Header Cover */}
         <View style={styles.headerContainer}>
-          <Image source={{ uri: PROFI_DATA.coverImage }} style={styles.coverImage} />
+          <Image source={{ uri: data.coverUrl || 'https://images.unsplash.com/photo-1530124566582-a618bc2615dc?q=80&w=1000&auto=format&fit=crop' }} style={styles.coverImage} />
+          <View style={styles.overlay} />
+          
+          {isOwner && (
+            <TouchableOpacity style={styles.editCoverBtn} onPress={handleEditCover}>
+              <MaterialCommunityIcons name="pencil-outline" size={20} color="#333" />
+            </TouchableOpacity>
+          )}
         </View>
 
+        {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            <Image source={{ uri: PROFI_DATA.avatar }} style={styles.avatar} />
+            <Image source={{ uri: data.avatarUrl || 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?q=80&w=200&auto=format&fit=crop' }} style={styles.avatar} />
             <View style={styles.verifiedBadge}>
-              <MaterialCommunityIcons name="check-decagram" size={20} color="#FF7A00" />
+              <MaterialCommunityIcons name="check-decagram" size={20} color="#00C853" />
             </View>
           </View>
           
-          <Text style={styles.name}>{PROFI_DATA.name}</Text>
-          <Text style={styles.role}>{PROFI_DATA.role}</Text>
+          <Text style={styles.name}>{data.name}</Text>
+          <Text style={styles.role}>{data.roleTitle || 'Profissional'}</Text>
+          {data.bio ? (
+            <Text style={styles.bio}>{data.bio}</Text>
+          ) : null}
           
           <View style={styles.ratingContainer}>
-            <MaterialCommunityIcons name="star" size={18} color="#FF7A00" />
-            <Text style={styles.ratingText}>{PROFI_DATA.rating}</Text>
-            <Text style={styles.reviewsText}>({PROFI_DATA.reviewsCount} serviços)</Text>
+            <MaterialCommunityIcons name="star" size={20} color="#FFB300" />
+            <Text style={styles.ratingText}>{data.rating || 0}</Text>
+            <Text style={styles.reviewsText}>({data.reviewsCount || 0} avaliações)</Text>
           </View>
 
-          <View style={styles.actionButtonsContainer}>
-            <TouchableOpacity style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Contratar Agora</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryButton}>
-              <Text style={styles.secondaryButtonText}>Enviar Mensagem</Text>
-            </TouchableOpacity>
-          </View>
+          {isOwner ? (
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity style={[styles.primaryButton, { backgroundColor: '#333' }]} activeOpacity={0.8} onPress={openEditProfile}>
+                <View style={styles.primaryButtonContent}>
+                  <MaterialCommunityIcons name="account-edit-outline" size={20} color="#FFF" style={styles.btnIcon} />
+                  <Text style={styles.primaryButtonText}>Editar Perfil e Destaques</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8}>
+                <View style={styles.primaryButtonContent}>
+                  <MaterialCommunityIcons name="briefcase-check" size={20} color="#FFF" style={styles.btnIcon} />
+                  <Text style={styles.primaryButtonText}>Contratar Agora</Text>
+                </View>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.7}>
+                <MaterialCommunityIcons name="message-text-outline" size={20} color="#FF7A00" style={styles.btnIcon} />
+                <Text style={styles.secondaryButtonText}>Enviar Mensagem</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
+        {/* Highlights Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Professional Highlights</Text>
+          <Text style={styles.sectionTitle}>Destaques do Profissional</Text>
           
           <View style={styles.highlightsRow}>
             <View style={[styles.highlightCard, { flex: 1, marginRight: 10 }]}>
               <MaterialCommunityIcons name="briefcase-outline" size={28} color="#FF7A00" />
-              <Text style={styles.highlightValue}>15+</Text>
+              <Text style={styles.highlightValue}>{data.highlights?.yearsOfExperience || '0'}</Text>
               <Text style={styles.highlightLabel}>ANOS EXPERIÊNCIA</Text>
             </View>
             <View style={[styles.highlightCard, { flex: 1 }]}>
               <MaterialCommunityIcons name="clock-outline" size={28} color="#FF7A00" />
-              <Text style={styles.highlightValue}>&lt; 1h</Text>
+              <Text style={styles.highlightValue}>{data.highlights?.averageResponseTime || '-'}</Text>
               <Text style={styles.highlightLabel}>TEMPO RESPOSTA</Text>
             </View>
           </View>
 
           <View style={[styles.highlightCard, { marginTop: 10 }]}>
             <MaterialCommunityIcons name="check-circle-outline" size={28} color="#FF7A00" />
-            <Text style={styles.highlightValue}>300+</Text>
+            <Text style={styles.highlightValue}>{data.highlights?.completedJobs || '0'}</Text>
             <Text style={styles.highlightLabel}>SERVIÇOS CONCLUÍDOS</Text>
           </View>
         </View>
 
+        {/* Certificates Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Certificates</Text>
+          <View style={styles.portfolioHeader}>
+            <Text style={styles.sectionTitle}>Certificações</Text>
+            {isOwner && (
+              <TouchableOpacity onPress={() => setModalCertVisible(true)} activeOpacity={0.6} style={styles.addProjectBtn}>
+                <MaterialCommunityIcons name="plus" size={16} color="#FFF" />
+                <Text style={styles.addProjectText}>Adicionar</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           
-          <View style={styles.certificateCard}>
-            <View style={[styles.certIconContainer, { backgroundColor: '#FFEADD' }]}>
-              <MaterialCommunityIcons name="lightning-bolt" size={24} color="#333" />
+          {data.certificates && data.certificates.length > 0 ? data.certificates.map(cert => (
+            <View key={cert.id} style={styles.certificateCard}>
+              <View style={[styles.certIconContainer, { backgroundColor: '#EAEAEA' }]}>
+                <MaterialCommunityIcons name={(cert.icon as any) || 'medal-outline'} size={24} color="#333" />
+              </View>
+              <View style={styles.certTextContainer}>
+                <Text style={styles.certTitle}>{cert.title}</Text>
+                <Text style={styles.certDesc}>{cert.description}</Text>
+              </View>
             </View>
-            <View style={styles.certTextContainer}>
-              <Text style={styles.certTitle}>NR10 Certification</Text>
-              <Text style={styles.certDesc}>Segurança em Instalações</Text>
-            </View>
-          </View>
-
-          <View style={styles.certificateCard}>
-            <View style={[styles.certIconContainer, { backgroundColor: '#EAEAEA' }]}>
-              <MaterialCommunityIcons name="medal-outline" size={24} color="#333" />
-            </View>
-            <View style={styles.certTextContainer}>
-              <Text style={styles.certTitle}>Top Pro 2023</Text>
-              <Text style={styles.certDesc}>Awarded for Excellence</Text>
-            </View>
-          </View>
+          )) : (
+            <Text style={{ color: '#888', marginTop: 10 }}>Nenhuma certificação adicionada ainda.</Text>
+          )}
         </View>
 
+        {/* Portfolio Section */}
         <View style={styles.section}>
           <View style={styles.portfolioHeader}>
             <Text style={styles.sectionTitle}>Meu Portfólio</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>Ver todos</Text>
-            </TouchableOpacity>
+            {isOwner ? (
+              <TouchableOpacity onPress={() => setModalVisible(true)} activeOpacity={0.6} style={styles.addProjectBtn}>
+                <MaterialCommunityIcons name="plus" size={16} color="#FFF" />
+                <Text style={styles.addProjectText}>Adicionar</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity activeOpacity={0.6}>
+                <Text style={styles.seeAllText}>Ver todos</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          {PROFI_DATA.portfolio.map((item) => (
+          {data.portfolioItems && data.portfolioItems.length > 0 ? data.portfolioItems.map((item) => (
             <View key={item.id} style={styles.portfolioCard}>
-              <Image source={{ uri: item.imageUrl }} style={styles.portfolioImage} />
+              {item.imageUrl ? (
+                <Image source={{ uri: item.imageUrl }} style={styles.portfolioImage} />
+              ) : null}
               <View style={styles.portfolioTextContainer}>
                 <Text style={styles.portfolioTitle}>{item.title}</Text>
                 <Text style={styles.portfolioDesc}>{item.description}</Text>
               </View>
             </View>
-          ))}
+          )) : (
+            <Text style={{ color: '#888', marginTop: 10 }}>Nenhum projeto no portfólio.</Text>
+          )}
         </View>
 
       </ScrollView>
+
+      {/* Modal for Adding Project */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Novo Projeto</Text>
+            
+            <Text style={styles.inputLabel}>Título do Projeto</Text>
+            <TextInput
+              style={[styles.modalInput, projectError && !newProjectTitle ? { borderColor: 'red' } : null]}
+              placeholder="Ex: Instalação Elétrica Residencial *"
+              value={newProjectTitle}
+              onChangeText={setNewProjectTitle}
+            />
+            
+            <Text style={styles.inputLabel}>Descrição</Text>
+            <TextInput
+              style={[styles.modalInput, { height: 80, textAlignVertical: 'top' }, projectError && !newProjectDesc ? { borderColor: 'red' } : null]}
+              placeholder="Descreva brevemente o projeto... *"
+              value={newProjectDesc}
+              onChangeText={setNewProjectDesc}
+              multiline
+            />
+
+            {projectError ? <Text style={styles.errorText}>{projectError}</Text> : null}
+            
+            <TouchableOpacity style={styles.imagePickerBtn}>
+              <MaterialCommunityIcons name="image-plus" size={24} color="#666" />
+              <Text style={styles.imagePickerText}>Selecionar Foto (Opcional)</Text>
+            </TouchableOpacity>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setModalVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleAddProject} disabled={addingProject}>
+                {addingProject ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.modalSaveText}>Salvar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal for Adding Certificate */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalCertVisible}
+        onRequestClose={() => setModalCertVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Nova Certificação</Text>
+            
+            <Text style={styles.inputLabel}>Nome do Certificado</Text>
+            <TextInput
+              style={[styles.modalInput, certError && !newCertTitle ? { borderColor: 'red' } : null]}
+              placeholder="Ex: NR10 *"
+              value={newCertTitle}
+              onChangeText={setNewCertTitle}
+            />
+            
+            <Text style={styles.inputLabel}>Instituição / Descrição</Text>
+            <TextInput
+              style={[styles.modalInput, { height: 80, textAlignVertical: 'top' }, certError && !newCertDesc ? { borderColor: 'red' } : null]}
+              placeholder="Quem emitiu ou detalhes do curso... *"
+              value={newCertDesc}
+              onChangeText={setNewCertDesc}
+              multiline
+            />
+
+            {certError ? <Text style={styles.errorText}>{certError}</Text> : null}
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setModalCertVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleAddCertificate} disabled={addingCert}>
+                {addingCert ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.modalSaveText}>Salvar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal for Editing Profile */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalProfileVisible}
+        onRequestClose={() => setModalProfileVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editar Perfil</Text>
+            
+            <Text style={styles.inputLabel}>Seu Título Profissional</Text>
+            <TextInput
+              style={[styles.modalInput, profileError && !editRoleTitle ? { borderColor: 'red' } : null]}
+              placeholder="Ex: Eletricista Master *"
+              value={editRoleTitle}
+              onChangeText={setEditRoleTitle}
+            />
+            
+            <Text style={styles.inputLabel}>Sua Apresentação (Bio)</Text>
+            <TextInput
+              style={[styles.modalInput, { height: 100, textAlignVertical: 'top' }, profileError && !editBio ? { borderColor: 'red' } : null]}
+              placeholder="Fale um pouco sobre sua experiência e serviços... *"
+              value={editBio}
+              onChangeText={setEditBio}
+              multiline
+            />
+
+            {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setModalProfileVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveProfile} disabled={savingProfile}>
+                {savingProfile ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.modalSaveText}>Salvar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FB',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F8F9FB',
@@ -153,111 +468,139 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   headerContainer: {
-    height: 180,
+    height: 220,
     width: '100%',
+    position: 'relative',
   },
   coverImage: {
     width: '100%',
     height: '100%',
   },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
   profileCard: {
     backgroundColor: '#FFF',
     marginHorizontal: 20,
-    marginTop: -40,
-    borderRadius: 16,
-    padding: 20,
+    marginTop: -60,
+    borderRadius: 20,
+    padding: 24,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#F0E6DF',
-    elevation: 2,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
   avatarContainer: {
     position: 'relative',
-    marginTop: -50,
+    marginTop: -60,
   },
   avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 12,
-    borderWidth: 3,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 4,
     borderColor: '#FFF',
   },
   verifiedBadge: {
     position: 'absolute',
-    bottom: -5,
-    right: -5,
+    bottom: 2,
+    right: 2,
     backgroundColor: '#FFF',
     borderRadius: 12,
+    padding: 2,
   },
   name: {
-    fontSize: 22,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '800',
     color: '#1A1A1A',
     marginTop: 12,
   },
   role: {
-    fontSize: 15,
-    color: '#666',
-    marginTop: 2,
+    fontSize: 16,
+    color: '#777',
+    fontWeight: '500',
+    marginTop: 4,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 20,
+    marginTop: 10,
+    marginBottom: 24,
+    backgroundColor: '#FFF8E1',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   ratingText: {
     fontSize: 15,
-    fontWeight: 'bold',
-    color: '#FF7A00',
-    marginLeft: 4,
+    fontWeight: '700',
+    color: '#FFB300',
+    marginLeft: 6,
   },
   reviewsText: {
     fontSize: 14,
     color: '#888',
-    marginLeft: 4,
+    marginLeft: 6,
+    fontWeight: '500',
   },
   actionButtonsContainer: {
     width: '100%',
-    gap: 10,
+    gap: 12,
   },
   primaryButton: {
+    width: '100%',
+    borderRadius: 12,
     backgroundColor: '#FF7A00',
-    paddingVertical: 14,
-    borderRadius: 8,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#FF7A00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  primaryButtonContent: {
+    flexDirection: 'row',
+    paddingVertical: 16,
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  btnIcon: {
+    marginRight: 8,
   },
   primaryButtonText: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   secondaryButton: {
+    flexDirection: 'row',
     backgroundColor: '#FFF',
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#FF7A00',
   },
   secondaryButtonText: {
     color: '#FF7A00',
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '700',
   },
   section: {
     paddingHorizontal: 20,
-    marginTop: 25,
+    marginTop: 30,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '800',
     color: '#1A1A1A',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   highlightsRow: {
     flexDirection: 'row',
@@ -267,37 +610,47 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderWidth: 1,
     borderColor: '#F0E6DF',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
   },
   highlightValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '900',
     color: '#1A1A1A',
-    marginTop: 8,
+    marginTop: 10,
   },
   highlightLabel: {
     fontSize: 11,
-    color: '#666',
-    fontWeight: '600',
-    marginTop: 4,
-    letterSpacing: 0.5,
+    color: '#888',
+    fontWeight: '700',
+    marginTop: 6,
+    letterSpacing: 0.8,
   },
   certificateCard: {
     flexDirection: 'row',
     backgroundColor: '#FFF',
     borderWidth: 1,
     borderColor: '#F0E6DF',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 18,
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
   },
   certIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 52,
+    height: 52,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -306,50 +659,179 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   certTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#1A1A1A',
   },
   certDesc: {
     fontSize: 14,
     color: '#666',
-    marginTop: 2,
+    marginTop: 4,
   },
   portfolioHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   seeAllText: {
     color: '#FF7A00',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
   portfolioCard: {
     backgroundColor: '#FFF',
     borderWidth: 1,
     borderColor: '#F0E6DF',
-    borderRadius: 16,
-    marginBottom: 16,
+    borderRadius: 20,
+    marginBottom: 20,
     overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
   },
   portfolioImage: {
     width: '100%',
-    height: 180,
+    height: 200,
   },
   portfolioTextContainer: {
-    padding: 16,
+    padding: 20,
   },
   portfolioTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#1A1A1A',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   portfolioDesc: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#666',
-    lineHeight: 20,
+    lineHeight: 22,
+  },
+  editCoverBtn: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    padding: 8,
+    borderRadius: 20,
+  },
+  addProjectBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#FF7A00',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  addProjectText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 13,
+    marginLeft: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 24,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#444',
+    marginBottom: 6,
+    marginLeft: 4,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    marginBottom: 16,
+    backgroundColor: '#FAFAFA',
+  },
+  imagePickerBtn: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    backgroundColor: '#FAFAFA',
+  },
+  imagePickerText: {
+    marginLeft: 10,
+    color: '#666',
+    fontWeight: '600',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#CCC',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: '#666',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  modalSaveBtn: {
+    flex: 1,
+    backgroundColor: '#FF7A00',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalSaveText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 13,
+    marginBottom: 16,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  bio: {
+    fontSize: 15,
+    color: '#555',
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 22,
+    paddingHorizontal: 10,
   }
 });
