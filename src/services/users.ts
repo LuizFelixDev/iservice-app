@@ -23,6 +23,7 @@ export interface UserResponseDto {
     phoneNumber?: string;
     document?: string;
     photoUrl?: string;
+    isOnline?: boolean;
 
     location?: {
       type: string;
@@ -61,6 +62,7 @@ export interface PortfolioResponseDto {
   coverUrl?: string;
   rating: number;
   reviewsCount: number;
+  isOnline?: boolean;
   highlights?: PortfolioHighlights;
   certificates: Certificate[];
   portfolioItems: PortfolioItem[];
@@ -69,6 +71,11 @@ export interface PortfolioResponseDto {
 export const usersService = {
   updateProfile: async (data: UpdateProfileDto): Promise<UserResponseDto> => {
     const response = await api.patch('/users/profile', data);
+    return response.data;
+  },
+
+  updateStatus: async (isOnline: boolean): Promise<any> => {
+    const response = await api.patch('/users/me/status', { isOnline });
     return response.data;
   },
 

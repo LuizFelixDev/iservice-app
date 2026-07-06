@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert, Switch } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { usersService, PortfolioResponseDto } from '../../services/users';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +29,9 @@ export default function ProfessionalPortfolio() {
   const [editBio, setEditBio] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState('');
+
+  // Status online state
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const { user } = useAuth();
   const route = useRoute<any>();
@@ -142,6 +145,21 @@ export default function ProfessionalPortfolio() {
     Alert.alert('Em breve', 'A edição de imagens e destaques será integrada com a galeria em breve!');
   };
 
+  const handleToggleStatus = async (value: boolean) => {
+    if (!data) return;
+    try {
+      setIsUpdatingStatus(true);
+      // Otimista (opcional) ou atualiza direto
+      const updated = await usersService.updateStatus(value);
+      setData({ ...data, isOnline: updated.isOnline });
+    } catch (error) {
+      console.error('Failed to update status', error);
+      Alert.alert('Erro', 'Não foi possível atualizar o status.');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   if (loading || !data) {
     return (
       <View style={styles.loadingContainer}>
@@ -178,6 +196,24 @@ export default function ProfessionalPortfolio() {
           
           <Text style={styles.name}>{data.name}</Text>
           <Text style={styles.role}>{data.roleTitle || 'Profissional'}</Text>
+          
+          <View style={styles.statusContainer}>
+            <View style={[styles.statusDot, { backgroundColor: data.isOnline ? '#00C853' : '#9E9E9E' }]} />
+            <Text style={[styles.statusText, { color: data.isOnline ? '#00C853' : '#9E9E9E' }]}>
+              {data.isOnline ? 'Online agora' : 'Offline'}
+            </Text>
+            {isOwner && (
+              <Switch
+                trackColor={{ false: '#767577', true: '#81b0ff' }}
+                thumbColor={data.isOnline ? '#2196F3' : '#f4f3f4'}
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={handleToggleStatus}
+                value={data.isOnline}
+                disabled={isUpdatingStatus}
+                style={{ marginLeft: 8, transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+              />
+            )}
+          </View>
           {data.bio ? (
             <Text style={styles.bio}>{data.bio}</Text>
           ) : null}
@@ -525,6 +561,26 @@ const styles = StyleSheet.create({
     color: '#777',
     fontWeight: '500',
     marginTop: 4,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 20,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   ratingContainer: {
     flexDirection: 'row',
