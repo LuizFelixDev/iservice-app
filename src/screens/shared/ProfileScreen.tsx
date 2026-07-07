@@ -35,16 +35,37 @@ export default function ProfileScreen() {
         </Typography>
 
         {isProfessional && (
-          <View style={styles.switchContainer}>
-            <Typography variant="body" weight="500">Ativar Modo Profissional</Typography>
-            <Switch
-              trackColor={{ false: '#767577', true: colors.primaryFixedDim }}
-              thumbColor={role === 'PROFESSIONAL' ? colors.primary : '#f4f3f4'}
-              ios_backgroundColor="#3e3e3e"
-              onValueChange={toggleSwitch}
-              value={role === 'PROFESSIONAL'}
-            />
-          </View>
+          <>
+            <Spacer size={16}/>
+            <Typography variant="caption" color={colors.onSurfaceVariant}>
+              Visualizações do Perfil
+            </Typography>
+
+            <Typography variant="body" weight="600">
+              👁 {user?.profile?.views ?? 0}
+            </Typography>
+
+            <View style={styles.switchContainer}>
+              <Typography variant="body" weight="500">
+                Ativar Modo Profissional
+              </Typography>
+
+              <Switch
+                trackColor={{
+                  false: '#767577',
+                  true: colors.primaryFixedDim,
+                }}
+                thumbColor={
+                  role === 'PROFESSIONAL'
+                    ? colors.primary
+                    : '#f4f3f4'
+                }
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={toggleSwitch}
+                value={role === 'PROFESSIONAL'}
+              />
+            </View>
+          </>
         )}
       </View>
 
