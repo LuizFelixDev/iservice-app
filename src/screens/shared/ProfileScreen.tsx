@@ -66,11 +66,20 @@ export default function ProfileScreen() {
 
       {/* Mode Selection */}
       <View style={styles.section}>
-        <Typography variant="h3" color="#1A1A1A" style={{ marginBottom: 16 }}>Modo de Uso</Typography>
-        
+        <Typography
+          variant="h3"
+          color="#1A1A1A"
+          style={{ marginBottom: 16 }}
+        >
+          Modo de Uso
+        </Typography>
+
         <View style={styles.modeContainer}>
-          <TouchableOpacity 
-            style={[styles.modeCard, role === 'USER' && styles.modeCardActive]} 
+          <TouchableOpacity
+            style={[
+              styles.modeCard,
+              role === 'USER' && styles.modeCardActive,
+            ]}
             activeOpacity={0.7}
             onPress={() => switchRole('USER')}
           >
@@ -80,8 +89,12 @@ export default function ProfileScreen() {
             </Typography>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.modeCard, role === 'PROFESSIONAL' && styles.modeCardActive, !isProfessional && { opacity: 0.5 }]} 
+          <TouchableOpacity
+            style={[
+              styles.modeCard,
+              role === 'PROFESSIONAL' && styles.modeCardActive,
+              !isProfessional && { opacity: 0.5 },
+            ]}
             activeOpacity={0.7}
             onPress={() => {
               if (isProfessional) {
@@ -97,6 +110,24 @@ export default function ProfileScreen() {
             </Typography>
           </TouchableOpacity>
         </View>
+
+        {isProfessional && (
+          <View style={{ marginTop: 20 }}>
+            <Typography
+              variant="caption"
+              color={colors.onSurfaceVariant}
+            >
+              Visualizações do Perfil
+            </Typography>
+
+            <Typography
+              variant="body"
+              weight="600"
+            >
+              👁 {user?.profile?.views ?? 0}
+            </Typography>
+          </View>
+        )}
       </View>
 
       <Spacer size={24} />

@@ -23,6 +23,7 @@ export interface UserResponseDto {
     phoneNumber?: string;
     document?: string;
     photoUrl?: string;
+    views?: number;
     isOnline?: boolean;
 
     location?: {
