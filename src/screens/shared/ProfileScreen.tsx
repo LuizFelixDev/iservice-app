@@ -118,6 +118,36 @@ export default function ProfileScreen() {
 
         <Spacer size={12} />
 
+        <TouchableOpacity 
+          style={styles.actionBtn}
+          onPress={() => navigation.navigate('Faq')}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons 
+            name="help-circle-outline"
+            size={22}
+            color="#444"
+            style={{ marginRight: 12 }}
+          />
+
+          <Typography 
+            variant="body"
+            weight="600"
+            color="#444"
+          >
+            Ajuda e Perguntas Frequentes
+          </Typography>
+
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={24}
+            color="#CCC"
+            style={{ marginLeft: 'auto' }}
+          />
+        </TouchableOpacity>
+
+        <Spacer size={12} />
+
         <TouchableOpacity style={styles.logoutBtn} onPress={signOut} activeOpacity={0.7}>
           <MaterialCommunityIcons name="logout" size={22} color={colors.error} style={{ marginRight: 12 }} />
           <Typography variant="body" weight="600" color={colors.error}>Sair da Conta</Typography>
