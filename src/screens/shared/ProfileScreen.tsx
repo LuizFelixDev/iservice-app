@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, Switch } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { Screen, Typography, Button, Spacer } from '@/components';
 import { colors } from '@/colors/Colors';
@@ -10,108 +11,224 @@ export default function ProfileScreen() {
   const navigation = useNavigation<any>();
 
   const isProfessional = user?.roles?.includes('PROFESSIONAL') || user?.roles?.some((r: any) => r.name === 'PROFESSIONAL');
-
-  const toggleSwitch = () => {
-    switchRole(role === 'PROFESSIONAL' ? 'USER' : 'PROFESSIONAL');
-  };
+  const avatarUrl = user?.profile?.photoUrl || 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?q=80&w=200&auto=format&fit=crop';
+  const fullName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Usuário';
 
   return (
-    <Screen scrollable backgroundColor={colors.background}>
+    <Screen scrollable backgroundColor="#F8F9FB">
       <Spacer size={40} />
       
+      {/* Header Profile */}
       <View style={styles.header}>
-        <Typography variant="h1" color={colors.primary}>Meu Perfil</Typography>
+        <View style={styles.avatarContainer}>
+          <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+          {isProfessional && (
+            <View style={styles.verifiedBadge}>
+              <MaterialCommunityIcons name="check-decagram" size={24} color="#00C853" />
+            </View>
+          )}
+        </View>
+        
+        <Typography variant="h1" color="#1A1A1A" style={{ marginTop: 16 }}>{fullName}</Typography>
+        <Typography variant="body" color="#666" style={{ marginTop: 4 }}>{user?.email}</Typography>
       </View>
 
-      <View style={styles.card}>
-        <Typography variant="caption" color={colors.onSurfaceVariant}>E-mail</Typography>
-        <Typography variant="body" weight="600">{user?.email}</Typography>
-        
-        <Spacer size={16} />
-        
-        <Typography variant="caption" color={colors.onSurfaceVariant}>Modo de Visualização</Typography>
-        <Typography variant="body" weight="600">
-          {role === 'PROFESSIONAL' ? 'Modo Profissional (Radar)' : 'Modo Cliente'}
+      <Spacer size={32} />
+
+      {/* Mode Selection */}
+      <View style={styles.section}>
+        <Typography
+          variant="h3"
+          color="#1A1A1A"
+          style={{ marginBottom: 16 }}
+        >
+          Modo de Uso
         </Typography>
 
+        <View style={styles.modeContainer}>
+          <TouchableOpacity
+            style={[
+              styles.modeCard,
+              role === 'USER' && styles.modeCardActive,
+            ]}
+            activeOpacity={0.7}
+            onPress={() => switchRole('USER')}
+          >
+            <MaterialCommunityIcons
+              name="account-search-outline"
+              size={28}
+              color={role === 'USER' ? colors.primary : '#888'}
+            />
+
+            <Typography
+              variant="body"
+              weight="700"
+              color={role === 'USER' ? colors.primary : '#666'}
+              style={{ marginTop: 8 }}
+            >
+              Sou Cliente
+            </Typography>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.modeCard,
+              role === 'PROFESSIONAL' && styles.modeCardActive,
+              !isProfessional && { opacity: 0.5 },
+            ]}
+            activeOpacity={0.7}
+            onPress={() => {
+              if (isProfessional) {
+                switchRole('PROFESSIONAL');
+              } else {
+                navigation.navigate('UpdateProfile');
+              }
+            }}
+          >
+            <MaterialCommunityIcons
+              name="briefcase-outline"
+              size={28}
+              color={role === 'PROFESSIONAL' ? colors.primary : '#888'}
+            />
+
+            <Typography
+              variant="body"
+              weight="700"
+              color={role === 'PROFESSIONAL' ? colors.primary : '#666'}
+              style={{ marginTop: 8 }}
+            >
+              Sou Profissional
+            </Typography>
+          </TouchableOpacity>
+        </View>
+
         {isProfessional && (
-          <>
-            <Spacer size={16}/>
-            <Typography variant="caption" color={colors.onSurfaceVariant}>
+          <View style={{ marginTop: 20 }}>
+            <Typography
+              variant="caption"
+              color={colors.onSurfaceVariant}
+            >
               Visualizações do Perfil
             </Typography>
 
-            <Typography variant="body" weight="600">
+            <Typography
+              variant="body"
+              weight="600"
+            >
               👁 {user?.profile?.views ?? 0}
             </Typography>
-
-            <View style={styles.switchContainer}>
-              <Typography variant="body" weight="500">
-                Ativar Modo Profissional
-              </Typography>
-
-              <Switch
-                trackColor={{
-                  false: '#767577',
-                  true: colors.primaryFixedDim,
-                }}
-                thumbColor={
-                  role === 'PROFESSIONAL'
-                    ? colors.primary
-                    : '#f4f3f4'
-                }
-                ios_backgroundColor="#3e3e3e"
-                onValueChange={toggleSwitch}
-                value={role === 'PROFESSIONAL'}
-              />
-            </View>
-          </>
+          </View>
         )}
       </View>
 
       <Spacer size={24} />
 
-      {!isProfessional && (
-        <>
-          <Button 
-            title="Quero ser um Profissional" 
-            onPress={() => navigation.navigate('UpdateProfile')} 
-          />
-          <Spacer size={16} />
-        </>
-      )}
+      {/* Actions */}
+      <View style={styles.section}>
+        {!isProfessional ? (
+          <TouchableOpacity style={styles.premiumBtn} onPress={() => navigation.navigate('UpdateProfile')} activeOpacity={0.8}>
+            <MaterialCommunityIcons name="star-shooting" size={24} color="#FFF" style={{ marginRight: 8 }} />
+            <Typography variant="body" weight="700" color="#FFF">Quero ser um Profissional</Typography>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('UpdateProfile')} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="card-account-details-outline" size={22} color="#444" style={{ marginRight: 12 }} />
+            <Typography variant="body" weight="600" color="#444">Editar Cadastro Base (Bio, CPF)</Typography>
+            <MaterialCommunityIcons name="chevron-right" size={24} color="#CCC" style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
+        )}
 
-      <Button 
-        title="Sair da Conta" 
-        variant="outline" 
-        onPress={signOut} 
-        style={styles.logoutButton}
-      />
+        <Spacer size={12} />
+
+        <TouchableOpacity style={styles.logoutBtn} onPress={signOut} activeOpacity={0.7}>
+          <MaterialCommunityIcons name="logout" size={22} color={colors.error} style={{ marginRight: 12 }} />
+          <Typography variant="body" weight="600" color={colors.error}>Sair da Conta</Typography>
+        </TouchableOpacity>
+      </View>
+
+      <Spacer size={40} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    marginBottom: 24,
-  },
-  card: {
-    backgroundColor: '#F9FAFB',
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
   },
-  logoutButton: {
-    borderColor: colors.error,
+  avatarContainer: {
+    position: 'relative',
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#FFF',
+  },
+  verifiedBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#FFF',
+    borderRadius: 15,
+    padding: 2,
+  },
+  section: {
+    paddingHorizontal: 20,
+  },
+  modeContainer: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  modeCard: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  modeCardActive: {
+    borderColor: colors.primary,
+    backgroundColor: '#FFF5EB',
+  },
+  premiumBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#FF7A00',
+    paddingVertical: 18,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#FF7A00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF0F0',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFD6D6',
   }
 });

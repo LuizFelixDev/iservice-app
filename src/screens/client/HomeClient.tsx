@@ -14,17 +14,15 @@ import {
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Ionicons,
-  Feather,
-  MaterialIcons,
-} from '@expo/vector-icons';
+import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
 
 import { colors } from '@/colors/Colors';
+import { RatingModal, LocationPickerModal } from '@/components';
 import { styles } from './HomeClientStyle';
 
 import { usersService } from '@/services/users';
 import { jobsService, Job } from '@/services/jobs';
+import { reviewsService } from '@/services/reviews';
 import { getCurrentLocation } from '@/services/location';
 
 const STATUS_CONFIG = {
@@ -32,22 +30,18 @@ const STATUS_CONFIG = {
     label: 'PROCURANDO PROFISSIONAL',
     color: colors.primary,
   },
-
   negotiating: {
     label: 'NEGOCIANDO',
     color: '#F59E0B',
   },
-
   accepted: {
     label: 'PROFISSIONAL A CAMINHO!',
     color: '#16A34A',
   },
-
   completed: {
     label: 'CONCLUÍDO',
     color: colors.onSurfaceVariant,
   },
-
   canceled: {
     label: 'CANCELADO',
     color: colors.error,
@@ -57,10 +51,10 @@ const STATUS_CONFIG = {
 function Header({
   userName,
   onBellPress,
-}: {
+}: Readonly<{
   userName: string;
   onBellPress: () => void;
-}) {
+}>) {
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
@@ -94,14 +88,18 @@ function Header({
 function ServiceRequestCard({
   descricao,
   loading,
+  customLocation,
   onChangeDescricao,
   onSolicitar,
-}: {
+  onOpenMap,
+}: Readonly<{
   descricao: string;
   loading: boolean;
+  customLocation: { latitude: number; longitude: number } | null;
   onChangeDescricao: (text: string) => void;
   onSolicitar: () => void;
-}) {
+  onOpenMap: () => void;
+}>) {
   const isDisabled =
     !descricao.trim() || loading;
 
@@ -129,16 +127,18 @@ function ServiceRequestCard({
         }
       />
 
-      <View style={styles.locationRow}>
+      <TouchableOpacity style={styles.locationRow} onPress={onOpenMap}>
         <Ionicons
           name="location-sharp"
           size={16}
           color={colors.primary}
         />
         <Text style={styles.locationText}>
-          Localização será enviada automaticamente
+          {customLocation
+            ? 'Localização selecionada no mapa'
+            : 'Usar minha localização atual (Automático)'}
         </Text>
-      </View>
+      </TouchableOpacity>
 
       <TouchableOpacity
         disabled={isDisabled}
@@ -173,10 +173,14 @@ function ServiceRequestCard({
 function ChamadoCard({
   chamado,
   onCancelar,
-}: {
+  onAvaliar,
+  isEvaluated,
+}: Readonly<{
   chamado: Job;
   onCancelar: (id: string) => void;
-}) {
+  onAvaliar: (id: string) => void;
+  isEvaluated: boolean;
+}>) {
   const config =
     STATUS_CONFIG[
       chamado.status as keyof typeof STATUS_CONFIG
@@ -264,16 +268,61 @@ function ChamadoCard({
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={styles.cancelarBtn}
-        onPress={() =>
-          onCancelar(chamado.id)
-        }
-      >
-        <Text style={styles.cancelarText}>
-          Cancelar Serviço
-        </Text>
-      </TouchableOpacity>
+      {!['canceled', 'completed'].includes(chamado.status) && (
+        <TouchableOpacity
+          style={styles.cancelarBtn}
+          onPress={() => onCancelar(chamado.id)}
+        >
+          <Text style={styles.cancelarText}>Cancelar Serviço</Text>
+        </TouchableOpacity>
+      )}
+
+      {chamado.status === 'completed' && !isEvaluated && (
+        <TouchableOpacity
+          style={styles.avaliarBtn}
+          onPress={() => onAvaliar(chamado.id)}
+        >
+          <Text style={styles.avaliarText}>Avaliar Profissional</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+function RecentReviewsCarousel() {
+  const [reviews, setReviews] = useState<{ id: string; rating: number; comment?: string }[]>([]);
+
+  useEffect(() => {
+    reviewsService.getRecentReviews().then(setReviews).catch(console.error);
+  }, []);
+
+  if (reviews.length === 0) return null;
+
+  return (
+    <View style={styles.carouselContainer}>
+      <Text style={styles.carouselTitle}>O que dizem dos nossos profissionais</Text>
+      <FlatList
+        data={reviews}
+        keyExtractor={(item) => item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={296}
+        decelerationRate="fast"
+        contentContainerStyle={styles.carouselListContent}
+        renderItem={({ item }) => (
+          <View style={styles.carouselCard}>
+            <Text style={styles.carouselRating}>
+              {"★".repeat(item.rating)}
+              {"☆".repeat(5 - item.rating)}
+            </Text>
+            {item.comment ? (
+              <Text style={styles.carouselComment} numberOfLines={3}>
+                "{item.comment}"
+              </Text>
+            ) : null}
+          </View>
+        )}
+      />
     </View>
   );
 }
@@ -297,6 +346,13 @@ export default function HomeClient() {
 
   const [creatingJob, setCreatingJob] =
     useState(false);
+
+  const [selectedJobIdForRating, setSelectedJobIdForRating] = 
+    useState<string | null>(null);
+
+  const [evaluatedJobs, setEvaluatedJobs] = useState<string[]>([]);
+  const [mapModalVisible, setMapModalVisible] = useState(false);
+  const [customLocation, setCustomLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const loadData = useCallback(
     async (showLoader = false) => {
@@ -331,6 +387,7 @@ export default function HomeClient() {
 
   useEffect(() => {
     loadData(true);
+    reviewsService.getEvaluatedJobs().then(setEvaluatedJobs);
   }, [loadData]);
 
   const handleRefresh = () => {
@@ -358,11 +415,17 @@ export default function HomeClient() {
       try {
         setCreatingJob(true);
 
-        const {
-          latitude,
-          longitude,
-        } =
-          await getCurrentLocation();
+        let latitude: number;
+        let longitude: number;
+
+        if (customLocation) {
+          latitude = customLocation.latitude;
+          longitude = customLocation.longitude;
+        } else {
+          const loc = await getCurrentLocation();
+          latitude = loc.latitude;
+          longitude = loc.longitude;
+        }
 
         await jobsService.createJob({
           description,
@@ -371,6 +434,7 @@ export default function HomeClient() {
         });
 
         setDescricao('');
+        setCustomLocation(null);
 
         await loadData();
 
@@ -405,11 +469,17 @@ export default function HomeClient() {
         },
         {
           text: 'Sim',
-          onPress: () => {
-            console.log(
-              'Cancelar:',
-              id
-            );
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await jobsService.cancelJob(id);
+              await loadData();
+              Alert.alert('Sucesso', 'Serviço cancelado com sucesso.');
+            } catch (error) {
+              console.error(error);
+              Alert.alert('Erro', 'Não foi possível cancelar o serviço.');
+              setLoading(false);
+            }
           },
         },
       ]
@@ -460,13 +530,17 @@ export default function HomeClient() {
             <ServiceRequestCard
               descricao={descricao}
               loading={creatingJob}
+              customLocation={customLocation}
               onChangeDescricao={
                 setDescricao
               }
               onSolicitar={
                 handleSolicitar
               }
+              onOpenMap={() => setMapModalVisible(true)}
             />
+
+            <RecentReviewsCarousel />
 
             <View
               style={
@@ -506,8 +580,31 @@ export default function HomeClient() {
             onCancelar={
               handleCancelar
             }
+            onAvaliar={setSelectedJobIdForRating}
+            isEvaluated={evaluatedJobs.includes(item.id)}
           />
         )}
+      />
+
+      {selectedJobIdForRating && (
+        <RatingModal
+          visible={!!selectedJobIdForRating}
+          jobId={selectedJobIdForRating}
+          onClose={() => setSelectedJobIdForRating(null)}
+          onSuccess={() => {
+            if (selectedJobIdForRating) {
+              setEvaluatedJobs((prev) => [...prev, selectedJobIdForRating]);
+              reviewsService.saveEvaluatedJob(selectedJobIdForRating);
+            }
+            setSelectedJobIdForRating(null);
+          }}
+        />
+      )}
+
+      <LocationPickerModal
+        visible={mapModalVisible}
+        onClose={() => setMapModalVisible(false)}
+        onSelectLocation={(lat, lng) => setCustomLocation({ latitude: lat, longitude: lng })}
       />
     </SafeAreaView>
   );

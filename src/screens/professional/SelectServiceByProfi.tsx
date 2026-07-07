@@ -13,8 +13,6 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../colors/Colors';
 import { styles } from './SelectServiceByProfiStyle';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type Category = {
   id: string;
   label: string;
@@ -30,8 +28,6 @@ type Professional = {
   coverImage: string;
   rating: number;
 };
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
 
 const CATEGORIES: Category[] = [
   { id: 'encanador',   label: 'Encanador',   icon: 'pipe-wrench'    },
@@ -79,8 +75,6 @@ const PROFESSIONALS: Professional[] = [
     rating: 4.6,
   },
 ];
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const CategoryPill = ({
   item,
@@ -132,8 +126,6 @@ const ProfessionalCard = ({
   </TouchableOpacity>
 );
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
-
 export default function SelectServiceByProfi() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -145,7 +137,6 @@ export default function SelectServiceByProfi() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      {/* ── Header ── */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profissionais</Text>
         <TouchableOpacity style={styles.bellBtn} activeOpacity={0.8}>
@@ -153,7 +144,6 @@ export default function SelectServiceByProfi() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Category Pills ── */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -171,7 +161,6 @@ export default function SelectServiceByProfi() {
         ))}
       </ScrollView>
 
-      {/* ── Professional List ── */}
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
