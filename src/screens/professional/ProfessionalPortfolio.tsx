@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert, Switch, FlatList } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { usersService, PortfolioResponseDto } from '../../services/users';
+import { reviewsService, Review } from '../../services/reviews';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRoute } from '@react-navigation/native';
 
 export default function ProfessionalPortfolio() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<PortfolioResponseDto | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   
   // Modal states for Project
   const [modalVisible, setModalVisible] = useState(false);
@@ -45,6 +47,9 @@ export default function ProfessionalPortfolio() {
       setLoading(true);
       const portfolioData = await usersService.getPortfolio(professionalId);
       setData(portfolioData);
+
+      const reviewsData = await reviewsService.getUserReviews(professionalId);
+      setReviews(reviewsData.reviews || []);
     } catch (error) {
       console.error('Failed to fetch portfolio', error);
     } finally {
@@ -273,6 +278,53 @@ export default function ProfessionalPortfolio() {
             <Text style={styles.highlightLabel}>SERVIÇOS CONCLUÍDOS</Text>
           </View>
         </View>
+
+        {/* Avaliações Section */}
+        {reviews && reviews.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.portfolioHeader}>
+              <Text style={styles.sectionTitle}>Avaliações</Text>
+            </View>
+            <FlatList
+              data={reviews}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={316}
+              decelerationRate="fast"
+              contentContainerStyle={{ paddingRight: 20 }}
+              renderItem={({ item }) => (
+                <View style={styles.reviewCard}>
+                  <View style={styles.reviewHeader}>
+                    {item.reviewer?.picture ? (
+                      <Image source={{ uri: item.reviewer.picture }} style={styles.reviewerAvatar} />
+                    ) : (
+                      <View style={styles.reviewerAvatarPlaceholder}>
+                        <Text style={styles.reviewerInitials}>
+                          {item.reviewer?.firstName?.charAt(0) || '?'}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.reviewerInfo}>
+                      <Text style={styles.reviewerName}>
+                        {item.reviewer?.firstName} {item.reviewer?.lastName}
+                      </Text>
+                      <Text style={styles.reviewRating}>
+                        {"★".repeat(item.rating)}
+                        {"☆".repeat(5 - item.rating)}
+                      </Text>
+                    </View>
+                  </View>
+                  {item.comment ? (
+                    <Text style={styles.reviewComment} numberOfLines={4}>
+                      "{item.comment}"
+                    </Text>
+                  ) : null}
+                </View>
+              )}
+            />
+          </View>
+        )}
 
         {/* Certificates Section */}
         <View style={styles.section}>
@@ -889,5 +941,63 @@ const styles = StyleSheet.create({
     marginTop: 12,
     lineHeight: 22,
     paddingHorizontal: 10,
+  },
+  reviewCard: {
+    width: 300,
+    marginRight: 16,
+    padding: 16,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F0E6DF',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  reviewerAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 12,
+  },
+  reviewerAvatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FF7A00',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  reviewerInitials: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  reviewerInfo: {
+    flex: 1,
+  },
+  reviewerName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  reviewRating: {
+    fontSize: 16,
+    color: '#F59E0B',
+  },
+  reviewComment: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+    lineHeight: 20,
   }
 });
