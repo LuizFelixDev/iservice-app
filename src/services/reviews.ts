@@ -30,6 +30,11 @@ export const reviewsService = {
     return response.data;
   },
 
+  getRecentReviews: async (): Promise<Review[]> => {
+    const response = await api.get('/reviews/recent');
+    return response.data;
+  },
+
   saveEvaluatedJob: async (jobId: string): Promise<void> => {
     try {
       const stored = await SecureStore.getItemAsync('evaluated_jobs');

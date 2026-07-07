@@ -30,22 +30,18 @@ const STATUS_CONFIG = {
     label: 'PROCURANDO PROFISSIONAL',
     color: colors.primary,
   },
-
   negotiating: {
     label: 'NEGOCIANDO',
     color: '#F59E0B',
   },
-
   accepted: {
     label: 'PROFISSIONAL A CAMINHO!',
     color: '#16A34A',
   },
-
   completed: {
     label: 'CONCLUÍDO',
     color: colors.onSurfaceVariant,
   },
-
   canceled: {
     label: 'CANCELADO',
     color: colors.error,
@@ -55,10 +51,10 @@ const STATUS_CONFIG = {
 function Header({
   userName,
   onBellPress,
-}: {
+}: Readonly<{
   userName: string;
   onBellPress: () => void;
-}) {
+}>) {
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
@@ -96,14 +92,14 @@ function ServiceRequestCard({
   onChangeDescricao,
   onSolicitar,
   onOpenMap,
-}: {
+}: Readonly<{
   descricao: string;
   loading: boolean;
   customLocation: { latitude: number; longitude: number } | null;
   onChangeDescricao: (text: string) => void;
   onSolicitar: () => void;
   onOpenMap: () => void;
-}) {
+}>) {
   const isDisabled =
     !descricao.trim() || loading;
 
@@ -173,17 +169,18 @@ function ServiceRequestCard({
     </View>
   );
 }
+
 function ChamadoCard({
   chamado,
   onCancelar,
   onAvaliar,
   isEvaluated,
-}: {
+}: Readonly<{
   chamado: Job;
   onCancelar: (id: string) => void;
   onAvaliar: (id: string) => void;
   isEvaluated: boolean;
-}) {
+}>) {
   const config =
     STATUS_CONFIG[
       chamado.status as keyof typeof STATUS_CONFIG
@@ -288,6 +285,44 @@ function ChamadoCard({
           <Text style={styles.avaliarText}>Avaliar Profissional</Text>
         </TouchableOpacity>
       )}
+    </View>
+  );
+}
+
+function RecentReviewsCarousel() {
+  const [reviews, setReviews] = useState<{ id: string; rating: number; comment?: string }[]>([]);
+
+  useEffect(() => {
+    reviewsService.getRecentReviews().then(setReviews).catch(console.error);
+  }, []);
+
+  if (reviews.length === 0) return null;
+
+  return (
+    <View style={styles.carouselContainer}>
+      <Text style={styles.carouselTitle}>O que dizem dos nossos profissionais</Text>
+      <FlatList
+        data={reviews}
+        keyExtractor={(item) => item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={296}
+        decelerationRate="fast"
+        contentContainerStyle={styles.carouselListContent}
+        renderItem={({ item }) => (
+          <View style={styles.carouselCard}>
+            <Text style={styles.carouselRating}>
+              {"★".repeat(item.rating)}
+              {"☆".repeat(5 - item.rating)}
+            </Text>
+            {item.comment ? (
+              <Text style={styles.carouselComment} numberOfLines={3}>
+                "{item.comment}"
+              </Text>
+            ) : null}
+          </View>
+        )}
+      />
     </View>
   );
 }
@@ -504,6 +539,8 @@ export default function HomeClient() {
               }
               onOpenMap={() => setMapModalVisible(true)}
             />
+
+            <RecentReviewsCarousel />
 
             <View
               style={
