@@ -103,4 +103,9 @@ export const usersService = {
     const response = await api.post('/users/me/certificates', data);
     return response.data;
   },
+
+  deleteAccount: async (): Promise<{ message: string }> => {
+    const response = await api.delete('/users/me');
+    return response.data;
+  },
 };
