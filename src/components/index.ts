@@ -8,3 +8,4 @@ export * from './ControlledInput';
 export * from './RatingModal';
 export * from './UserRating';
 export * from './LocationPickerModal';
+export * from './ReportIssueModal';
