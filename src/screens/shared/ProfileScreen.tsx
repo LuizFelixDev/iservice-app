@@ -1,14 +1,43 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { usersService } from '@/services/users';
 import { Screen, Typography, Button, Spacer } from '@/components';
 import { colors } from '@/colors/Colors';
 
 export default function ProfileScreen() {
   const { signOut, user, role, switchRole } = useAuth();
   const navigation = useNavigation<any>();
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Excluir Conta',
+      'Tem certeza de que deseja excluir sua conta? Esta ação é irreversível.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await usersService.deleteAccount();
+              Alert.alert('Sucesso', 'Sua conta foi excluída com sucesso.', [
+                { text: 'OK', onPress: () => signOut() }
+              ]);
+            } catch (error) {
+              Alert.alert('Erro', 'Falha ao excluir a conta. Tente novamente.');
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const isProfessional = user?.roles?.includes('PROFESSIONAL') || user?.roles?.some((r: any) => r.name === 'PROFESSIONAL');
   const avatarUrl = user?.profile?.photoUrl || 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?q=80&w=200&auto=format&fit=crop';
@@ -54,18 +83,8 @@ export default function ProfileScreen() {
             activeOpacity={0.7}
             onPress={() => switchRole('USER')}
           >
-            <MaterialCommunityIcons
-              name="account-search-outline"
-              size={28}
-              color={role === 'USER' ? colors.primary : '#888'}
-            />
-
-            <Typography
-              variant="body"
-              weight="700"
-              color={role === 'USER' ? colors.primary : '#666'}
-              style={{ marginTop: 8 }}
-            >
+            <MaterialCommunityIcons name="account-search-outline" size={28} color={role === 'USER' ? colors.primary : '#888'} />
+            <Typography variant="body" weight="bold" color={role === 'USER' ? colors.primary : '#666'} style={{ marginTop: 8 }}>
               Sou Cliente
             </Typography>
           </TouchableOpacity>
@@ -85,18 +104,8 @@ export default function ProfileScreen() {
               }
             }}
           >
-            <MaterialCommunityIcons
-              name="briefcase-outline"
-              size={28}
-              color={role === 'PROFESSIONAL' ? colors.primary : '#888'}
-            />
-
-            <Typography
-              variant="body"
-              weight="700"
-              color={role === 'PROFESSIONAL' ? colors.primary : '#666'}
-              style={{ marginTop: 8 }}
-            >
+            <MaterialCommunityIcons name="briefcase-outline" size={28} color={role === 'PROFESSIONAL' ? colors.primary : '#888'} />
+            <Typography variant="body" weight="bold" color={role === 'PROFESSIONAL' ? colors.primary : '#666'} style={{ marginTop: 8 }}>
               Sou Profissional
             </Typography>
           </TouchableOpacity>
@@ -128,7 +137,7 @@ export default function ProfileScreen() {
         {!isProfessional ? (
           <TouchableOpacity style={styles.premiumBtn} onPress={() => navigation.navigate('UpdateProfile')} activeOpacity={0.8}>
             <MaterialCommunityIcons name="star-shooting" size={24} color="#FFF" style={{ marginRight: 8 }} />
-            <Typography variant="body" weight="700" color="#FFF">Quero ser um Profissional</Typography>
+            <Typography variant="body" weight="bold" color="#FFF">Quero ser um Profissional</Typography>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('UpdateProfile')} activeOpacity={0.7}>
@@ -140,9 +149,54 @@ export default function ProfileScreen() {
 
         <Spacer size={12} />
 
+        <TouchableOpacity 
+          style={styles.actionBtn}
+          onPress={() => navigation.navigate('Faq')}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons 
+            name="help-circle-outline"
+            size={22}
+            color="#444"
+            style={{ marginRight: 12 }}
+          />
+
+          <Typography 
+            variant="body"
+            weight="600"
+            color="#444"
+          >
+            Ajuda e Perguntas Frequentes
+          </Typography>
+
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={24}
+            color="#CCC"
+            style={{ marginLeft: 'auto' }}
+          />
+        </TouchableOpacity>
+
+        <Spacer size={12} />
+
         <TouchableOpacity style={styles.logoutBtn} onPress={signOut} activeOpacity={0.7}>
           <MaterialCommunityIcons name="logout" size={22} color={colors.error} style={{ marginRight: 12 }} />
           <Typography variant="body" weight="600" color={colors.error}>Sair da Conta</Typography>
+        </TouchableOpacity>
+
+        <Spacer size={12} />
+
+        <TouchableOpacity 
+          style={[styles.deleteBtn, deleting && { opacity: 0.6 }]} 
+          onPress={handleDeleteAccount} 
+          disabled={deleting}
+          activeOpacity={0.7}
+          testID="delete-account-button"
+        >
+          <MaterialCommunityIcons name="account-remove-outline" size={22} color={colors.error} style={{ marginRight: 12 }} />
+          <Typography variant="body" weight="600" color={colors.error}>
+            {deleting ? 'Excluindo...' : 'Excluir Minha Conta'}
+          </Typography>
         </TouchableOpacity>
       </View>
 
@@ -222,6 +276,16 @@ const styles = StyleSheet.create({
     borderColor: '#EAEAEA',
   },
   logoutBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF0F0',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFD6D6',
+  },
+  deleteBtn: {
     flexDirection: 'row',
     backgroundColor: '#FFF0F0',
     paddingVertical: 16,

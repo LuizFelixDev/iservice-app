@@ -3,6 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import ProfileScreen from '../screens/shared/ProfileScreen';
 import UpdateProfileScreen from '../screens/shared/UpdateProfileScreen';
+import FaqScreen from '../screens/shared/FaqScreen';
 
 const ProfileStack = createStackNavigator();
 
@@ -15,6 +16,7 @@ export default function ProfileRoutes() {
     >
       <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
       <ProfileStack.Screen name="UpdateProfile" component={UpdateProfileScreen} />
+      <ProfileStack.Screen name="Faq" component={FaqScreen} />
     </ProfileStack.Navigator>
   );
 }
