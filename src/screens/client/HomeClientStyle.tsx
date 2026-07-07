@@ -2,8 +2,6 @@ import { StyleSheet } from 'react-native';
 import { colors } from '@/colors/Colors';
 
 export const styles = StyleSheet.create({
-
-  // ── Layout ────────────────────────────────────────────────────
   safe: {
     flex: 1,
     backgroundColor: '#F5F5F5',
@@ -16,8 +14,6 @@ export const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 24,
   },
-
-  // ── Header ────────────────────────────────────────────────────
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -62,8 +58,6 @@ export const styles = StyleSheet.create({
   bellIcon: {
     fontSize: 18,
   },
-
-  // ── ServiceRequestCard ────────────────────────────────────────
   card: {
     backgroundColor: colors.white,
     borderRadius: 16,
@@ -137,8 +131,6 @@ export const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-
-  // ── Seção Chamados ────────────────────────────────────────────
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -155,8 +147,6 @@ export const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
-
-  // ── ChamadoCard ───────────────────────────────────────────────
   chamadoCard: {
     backgroundColor: colors.white,
     borderRadius: 14,
@@ -252,8 +242,6 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-
-  // ── Empty state ───────────────────────────────────────────────
   emptyState: {
     alignItems: 'center',
     paddingVertical: 32,
@@ -264,6 +252,39 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.onSurfaceVariant,
   },
-
-
+  carouselContainer: {
+    marginBottom: 24,
+  },
+  carouselTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.onSurface,
+    marginBottom: 12,
+  },
+  carouselListContent: {
+    paddingRight: 16,
+  },
+  carouselCard: {
+    width: 280,
+    marginRight: 16,
+    padding: 16,
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    shadowColor: colors.Dark,
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  carouselRating: {
+    fontSize: 18,
+    color: '#F59E0B',
+    marginBottom: 8,
+  },
+  carouselComment: {
+    fontSize: 14,
+    color: colors.onSurfaceVariant,
+    fontStyle: 'italic',
+    lineHeight: 20,
+  },
 });
