@@ -4,12 +4,13 @@ import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { usersService } from '@/services/users';
-import { Screen, Typography, Button, Spacer } from '@/components';
+import { Screen, Typography, Button, Spacer, ReportIssueModal } from '@/components';
 import { colors } from '@/colors/Colors';
 
 export default function ProfileScreen() {
   const { signOut, user, role, switchRole } = useAuth();
   const navigation = useNavigation<any>();
+  const [reportModalVisible, setReportModalVisible] = React.useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const handleDeleteAccount = () => {
@@ -149,6 +150,13 @@ export default function ProfileScreen() {
 
         <Spacer size={12} />
 
+        <TouchableOpacity style={styles.reportBtn} onPress={() => setReportModalVisible(true)} activeOpacity={0.7}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={22} color="#666" style={{ marginRight: 12 }} />
+          <Typography variant="body" weight="600" color="#666">Reportar um Erro</Typography>
+        </TouchableOpacity>
+
+        <Spacer size={12} />
+
         <TouchableOpacity 
           style={styles.actionBtn}
           onPress={() => navigation.navigate('Faq')}
@@ -201,6 +209,11 @@ export default function ProfileScreen() {
       </View>
 
       <Spacer size={40} />
+
+      <ReportIssueModal 
+        visible={reportModalVisible} 
+        onClose={() => setReportModalVisible(false)} 
+      />
     </Screen>
   );
 }
@@ -268,6 +281,16 @@ const styles = StyleSheet.create({
   actionBtn: {
     flexDirection: 'row',
     backgroundColor: '#FFF',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
+  },
+  reportBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F9FB',
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderRadius: 16,
